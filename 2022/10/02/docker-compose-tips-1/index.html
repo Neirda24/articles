@@ -9,8 +9,8 @@
 <meta property="og:title" content="Docker Compose - a few tips #1" />
 <meta name="author" content="Adrien Roches" />
 <meta property="og:locale" content="en" />
-<meta name="description" content="When following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (fewer files as possible, fewer lines of code, …). The drawbacks are it does not teach us the best way to do things. How to keep things readable, maintainable, flexible, …" />
-<meta name="twitter:description" property="og:description" content="When following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (fewer files as possible, fewer lines of code, …). The drawbacks are it does not teach us the best way to do things. How to keep things readable, maintainable, flexible, …" />
+<meta name="description" content="When following tutorials or hello-world examples, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (as few files as possible, as few lines of code as possible, …). The drawback is that it does not teach us the best way to do things: how to keep things readable, maintainable, flexible, …" />
+<meta name="twitter:description" property="og:description" content="When following tutorials or hello-world examples, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (as few files as possible, as few lines of code as possible, …). The drawback is that it does not teach us the best way to do things: how to keep things readable, maintainable, flexible, …" />
 <link rel="canonical" href="https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/" />
 <meta property="og:url" content="https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/" />
 <meta property="og:site_name" content="Articles" />
@@ -20,7 +20,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="Docker Compose - a few tips #1" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2022-10-02T00:00:00+00:00","datePublished":"2022-10-02T00:00:00+00:00","description":"When following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (fewer files as possible, fewer lines of code, …). The drawbacks are it does not teach us the best way to do things. How to keep things readable, maintainable, flexible, …","headline":"Docker Compose - a few tips #1","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/"},"url":"https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2022-10-02T00:00:00+00:00","datePublished":"2022-10-02T00:00:00+00:00","description":"When following tutorials or hello-world examples, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (as few files as possible, as few lines of code as possible, …). The drawback is that it does not teach us the best way to do things: how to keep things readable, maintainable, flexible, …","headline":"Docker Compose - a few tips #1","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/"},"url":"https://neirda24.github.io/articles/2022/10/02/docker-compose-tips-1/"}</script>
 <!-- End Jekyll SEO tag -->
 
   <link rel="stylesheet" href="/articles/assets/css/style.css">
@@ -31,11 +31,11 @@
   <header class="site-header">
     <div class="site-header-inner">
       <a class="site-title" href="/articles/">Articles</a>
-      <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+      <p class="site-description">Technical notes and lessons learned — Symfony, PHP, DevOps.</p>
     </div>
   </header>
   <main class="site-content">
-    <a class="back-link" href="/articles/">&larr; Tous les articles</a>
+    <a class="back-link" href="/articles/">&larr; All posts</a>
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Docker Compose - a few tips #1</h1>
@@ -57,7 +57,7 @@
     
   </header>
   <div class="post-content">
-    <p>When following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (fewer files as possible, fewer lines of code, …). The drawbacks are it does not teach us the best way to do things. How to keep things readable, maintainable, flexible, …</p>
+    <p>When following tutorials or hello-world examples, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (as few files as possible, as few lines of code as possible, …). The drawback is that it does not teach us the best way to do things: how to keep things readable, maintainable, flexible, …</p>
 
 <p>I’ll try to provide some useful knowledge about <code class="language-plaintext highlighter-rouge">docker compose</code>.</p>
 
@@ -76,7 +76,7 @@
 
 <h2 id="always-prefer-the-long-syntax-over-the-short-one">Always prefer the long syntax over the short one</h2>
 
-<p>This is how the vast majority learned to use volumes :</p>
+<p>This is how the vast majority learned to use volumes:</p>
 
 <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/compose_volumes_short-1.png" alt="docker compose short volume syntax - current directory" loading="lazy" />
@@ -89,11 +89,11 @@
   <li>We are using YAML so we should ALWAYS use either <code class="language-plaintext highlighter-rouge">'</code> or <code class="language-plaintext highlighter-rouge">"</code> when not using a boolean or number-like value.</li>
   <li>The <code class="language-plaintext highlighter-rouge">:</code> is not really readable. Right after <code class="language-plaintext highlighter-rouge">.</code> it is easy to miss.</li>
   <li>You can have (but clearly shouldn’t) <code class="language-plaintext highlighter-rouge">:</code> and <code class="language-plaintext highlighter-rouge">.</code> as filename or directory name. This can cause headaches.</li>
-  <li>If you are really unfamiliar with this syntax what is the source and what is the target ?</li>
-  <li>How to apply the readonly ?</li>
+  <li>If you are really unfamiliar with this syntax what is the source and what is the target?</li>
+  <li>How to apply the readonly?</li>
 </ol>
 
-<p>And get these examples :</p>
+<p>And get these examples:</p>
 
 <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/compose_volumes_short_project-1.png" alt="docker compose short volume syntax - project directory" loading="lazy" />
@@ -105,7 +105,7 @@
   <figcaption>docker compose short volume syntax - project volume or directory</figcaption>
 </figure>
 
-<p>Does <code class="language-plaintext highlighter-rouge">project</code> refers to a volume or a directory ? Which takes precedence ? Will it create it if it doesn’t already exists ?</p>
+<p>Does <code class="language-plaintext highlighter-rouge">project</code> refer to a volume or a directory? Which takes precedence? Will it create it if it doesn’t already exist?</p>
 
 <p>So many questions. Yet “compose” already has a way to ease things.</p>
 
@@ -114,17 +114,17 @@
   <figcaption>docker compose long volume syntax - project directory and read only</figcaption>
 </figure>
 
-<p>How does it look ?<br />
+<p>How does it look?<br />
 This is clearly stating that we are binding the local <code class="language-plaintext highlighter-rouge">project</code> directory to <code class="language-plaintext highlighter-rouge">/var/www/html</code> and this should be read only. You even have very good support from IDE (at least PHPStorm) to autocomplete the available keys.</p>
 
-<p>If a volume named “project” exists, it won’t be used for two reasons :</p>
+<p>If a volume named “project” exists, it won’t be used for two reasons:</p>
 
 <ol>
   <li>I wrote <code class="language-plaintext highlighter-rouge">./project</code> instead of <code class="language-plaintext highlighter-rouge">project</code> clearly stating a directory relative to the compose file.</li>
   <li>The <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">bind</code> so it won’t even look in the volume section.</li>
 </ol>
 
-<p>If you like this syntax you can check it out here :</p>
+<p>If you like this syntax you can check it out here:</p>
 
 <ul>
   <li><a href="https://github.com/compose-spec/compose-spec/blob/master/spec.md#long-syntax-4">volumes</a> (BTW always prefer the absolute path instead of relative ones. It will help with the next tips)</li>
@@ -137,27 +137,27 @@ This is clearly stating that we are binding the local <code class="language-plai
 
 <h2 id="split-the-responsibilities">Split the responsibilities</h2>
 
-<p>How do you use <code class="language-plaintext highlighter-rouge">compose</code> ? You usually go like this :</p>
+<p>How do you use <code class="language-plaintext highlighter-rouge">compose</code>? You usually go like this:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker compose up <span class="nt">-d</span>
 </code></pre></div></div>
 
 <p>in the directory where your <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file lives.</p>
 
-<p>But sometimes we need several configs for different installations. The “classic” use case is when using <a href="https://docker-sync.readthedocs.io/en/latest/">docker-sync</a> which requires you to create another <code class="language-plaintext highlighter-rouge">docker-compose</code> file. Luckily for us, there is a simple way to achieve that with the <a href="https://docs.docker.com/compose/extends/#understanding-multiple-compose-files">docker-compose.override.yml</a>. But, this file not being committed, if you want to ease the pain for the team you need to commit a <code class="language-plaintext highlighter-rouge">.dist</code> version of it and ask the developers to copy it. If it changes you need to guide them through how to change it.</p>
+<p>But sometimes we need several configs for different installations. The “classic” use case is when using <a href="https://docker-sync.readthedocs.io/en/latest/">docker-sync</a> which requires you to create another <code class="language-plaintext highlighter-rouge">docker-compose</code> file. Luckily for us, there is a simple way to achieve that with the <a href="https://docs.docker.com/compose/extends/#understanding-multiple-compose-files">docker-compose.override.yml</a>. But, since this file isn’t committed, if you want to ease the pain for the team you need to commit a <code class="language-plaintext highlighter-rouge">.dist</code> version of it and ask the developers to copy it. If it changes, you need to guide them through how to change it.</p>
 
-<p>Anyway, this is again a lot of pain. Compose offers a way to use more than one file actually. the <code class="language-plaintext highlighter-rouge">override</code> one is just a special case that docker automatically detects. But you could provide several others using <code class="language-plaintext highlighter-rouge">-f</code> like so :</p>
+<p>Anyway, this is again a lot of pain. Compose actually offers a way to use more than one file. The <code class="language-plaintext highlighter-rouge">override</code> one is just a special case that docker automatically detects. But you could provide several others using <code class="language-plaintext highlighter-rouge">-f</code> like so:</p>
 
 <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/compose_multiple_files.png" alt="docker compose with multiple files" loading="lazy" />
   <figcaption>docker compose with multiple files</figcaption>
 </figure>
 
-<p>When using multiple files like this they are “merged”. The second, override / append (in case of arrays and objects) the first one. The third one does the same to the previously merged file, etc etc.</p>
+<p>When using multiple files like this, they are “merged”. The second overrides / appends (in case of arrays and objects) the first one. The third one does the same to the previously merged file, etc.</p>
 
-<p>At first, it seems overly complicated both to set up and to use. Regarding the use, I’ll provide you with a way of using multiple files with the same command you are already used to without doing any magic just native compose features. As for the setup this is like any project. In PHP for example we don’t hesitate to have one class per file and to split into several classes so they are single responsibility. Easy to read = Easy to debug.</p>
+<p>At first, it seems overly complicated both to set up and to use. Regarding the use, I’ll provide you with a way of using multiple files with the same command you are already used to, without doing any magic, just native compose features. As for the setup, this is like any project. In PHP, for example, we don’t hesitate to have one class per file and to split into several classes so they are single responsibility. Easy to read = Easy to debug.</p>
 
-<p>This is the file structure I usually go with locally (<a href="https://gist.github.com/Neirda24/ffdb8dee99a5bc82fc577f55be05a80e">see gist</a>) :</p>
+<p>This is the file structure I usually go with locally (<a href="https://gist.github.com/Neirda24/ffdb8dee99a5bc82fc577f55be05a80e">see gist</a>):</p>
 
 <p>The <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file is the main one. It defines the services that will be common between all my environments (local, prod, else). Usually, it is a very light one.</p>
 
@@ -166,14 +166,14 @@ This is clearly stating that we are binding the local <code class="language-plai
   <figcaption>docker-compose.yml</figcaption>
 </figure>
 
-<p>Then goes the heavy one. The <code class="language-plaintext highlighter-rouge">docker-compose.local.yml</code> which contains all the local logic.</p>
+<p>Then comes the heavy one: <code class="language-plaintext highlighter-rouge">docker-compose.local.yml</code>, which contains all the local logic.</p>
 
 <ol>
-  <li>There is now a <code class="language-plaintext highlighter-rouge">postgres</code> database (in production I’ll go on managed services on AWS for example)</li>
+  <li>There is now a <code class="language-plaintext highlighter-rouge">postgres</code> database (in production I’ll go with managed services on AWS, for example)</li>
   <li>There are mount points (those should not exist in production as the sources should already be built into the container)</li>
   <li>There is a <code class="language-plaintext highlighter-rouge">node</code> service used to build / watch my assets</li>
   <li>
-    <p>etc etc</p>
+    <p>etc.</p>
 
     <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/docker-compose.local.yml.png" alt="docker-compose.local.yml" loading="lazy" />
@@ -183,7 +183,7 @@ This is clearly stating that we are binding the local <code class="language-plai
 <figcaption>docker-compose.local.yml</figcaption>
 <p>&lt;/figure&gt;</p>
 
-<p>Finally, I decided to not expose any ports and use traefik as a reverse proxy locally. That way I can serve my local app through valid https (more on that in another post). But others might decide to not use traefik and expose ports in a <code class="language-plaintext highlighter-rouge">docker-compose.local.ports.yml</code>.</p>
+<p>Finally, I decided not to expose any ports and to use traefik as a reverse proxy locally. That way I can serve my local app through valid https (more on that in another post). But others might decide to not use traefik and expose ports in a <code class="language-plaintext highlighter-rouge">docker-compose.local.ports.yml</code>.</p>
 
 <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/docker-compose.local.traefik.yml.png" alt="docker-compose.local.traefik.yml" loading="lazy" />
@@ -192,18 +192,18 @@ This is clearly stating that we are binding the local <code class="language-plai
 
 <h2 id="use-environment-variables">Use environment variables</h2>
 
-<p>Compose support environment variables out of the box. See more details on the <a href="https://docs.docker.com/compose/environment-variables/">documentation</a>.</p>
+<p>Compose supports environment variables out of the box. See more details on the <a href="https://docs.docker.com/compose/environment-variables/">documentation</a>.</p>
 
 <p>But exposing project-related variables globally is not the way to go.<br />
-Creating a <code class="language-plaintext highlighter-rouge">.env</code> file at the root of your <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file with default values. The precedence is <code class="language-plaintext highlighter-rouge">.env</code> variables will be overridden by the globally available ones.</p>
+Create a <code class="language-plaintext highlighter-rouge">.env</code> file at the root of your <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file with default values. The precedence is: <code class="language-plaintext highlighter-rouge">.env</code> variables will be overridden by the globally available ones.</p>
 
-<p>There are two kinds of variables you can put here. The compose ones and the project ones.</p>
+<p>There are two kinds of variables you can put here: the compose ones and the project ones.</p>
 
 <h3 id="the-compose-variables">The compose variables</h3>
 
 <p>Here is the link to the <a href="https://docs.docker.com/compose/reference/envvars/">documentation</a>.</p>
 
-<p>What I usually do is this :</p>
+<p>What I usually do is this:</p>
 
 <pre><code class="language-dotenv"># https://docs.docker.com/compose/reference/envvars/
 COMPOSE_PROJECT_NAME=myapp
@@ -214,7 +214,7 @@ COMPOSE_FILE="./docker-compose.yml|./docker-compose.local.yml|./docker-compose.l
 <ul>
   <li><code class="language-plaintext highlighter-rouge">COMPOSE_PROJECT_NAME</code> - By default it uses the directory name you’re in. This is useful to remove orphaned services. It also displays nicer in the Docker Desktop UI.</li>
   <li><code class="language-plaintext highlighter-rouge">COMPOSE_PATH_SEPARATOR</code> - Useful for the <code class="language-plaintext highlighter-rouge">COMPOSE_FILE</code>. By default it is <code class="language-plaintext highlighter-rouge">:</code> but I find it less readable. Keep it if you prefer.</li>
-  <li><code class="language-plaintext highlighter-rouge">COMPOSE_FILE</code> - Previously in this post I stated that using multiple files can be a burden that I’ll lift up later. This is it. You define an ordered list of files you want to use.</li>
+  <li><code class="language-plaintext highlighter-rouge">COMPOSE_FILE</code> - Previously in this post, I mentioned that using multiple files can be a burden — I’ll address that here. This is it. You define an ordered list of files you want to use.</li>
 </ul>
 
 <p>Now when I run</p>
@@ -237,7 +237,7 @@ COMPOSE_FILE="./docker-compose.yml|./docker-compose.local.yml|./docker-compose.l
 
 <p><a href="https://github.com/compose-spec/compose-spec/blob/master/spec.md#interpolation">How to use interpolation</a>.</p>
 
-<p>I previously stated that you should use absolute paths instead of relative ones for example. How to achieve that without forcing all your developers to have the exact same setup ?</p>
+<p>I previously stated that you should use absolute paths instead of relative ones, for example. How do we achieve that without forcing all your developers to have the exact same setup?</p>
 
 <p>Let’s add a new variable to the <code class="language-plaintext highlighter-rouge">.env</code></p>
 
@@ -245,7 +245,7 @@ COMPOSE_FILE="./docker-compose.yml|./docker-compose.local.yml|./docker-compose.l
 APP_PROJECT_PATH="/Users/me/Projects/RocIT/app"
 </code></pre>
 
-<p>and change the volume bindings in your <code class="language-plaintext highlighter-rouge">docker-compose</code> files like so :</p>
+<p>and change the volume bindings in your <code class="language-plaintext highlighter-rouge">docker-compose</code> files like so:</p>
 
 <figure class="post-figure post-figure--center">
   <img src="/articles/assets/img/docker-compose-tips-1/env_diff.png" alt="diff in docker-compose.yml - from hardcoded directory to variable one" loading="lazy" />
@@ -260,9 +260,9 @@ APP_PROJECT_PATH="/Users/me/Projects/RocIT/app"
 
 <h2 id="a-bit-of-help">A bit of help</h2>
 
-<p>Now we use the long syntax, we splat our files into multiple ones and we allowed everything to be configured by environment variables. Everything can be committed except for the <code class="language-plaintext highlighter-rouge">.env</code> file of course. So how to generate it easily ?</p>
+<p>Now we use the long syntax, we split our files into multiple ones, and we allowed everything to be configured by environment variables. Everything can be committed except for the <code class="language-plaintext highlighter-rouge">.env</code> file, of course. So how do we generate it easily?</p>
 
-<p>One of the method would be to use a <code class="language-plaintext highlighter-rouge">Makefile</code> (make a file).</p>
+<p>One of the methods would be to use a <code class="language-plaintext highlighter-rouge">Makefile</code> (make a file).</p>
 
 <div class="language-makefile highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">SHELL</span> <span class="o">:=</span> /bin/bash
 
@@ -289,7 +289,7 @@ APP_PROJECT_PATH="/Users/me/Projects/RocIT/app"
 <span class="nv">.DEFAULT_GOAL</span> <span class="o">:=</span> ./.env
 </code></pre></div></div>
 
-<p>now running</p>
+<p>Now running</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>make
 </code></pre></div></div>
