@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>Seamless usage of docker in any apps | roc-it.tech</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Seamless usage of docker in any apps" />
+<meta name="author" content="Adrien Roches" />
+<meta property="og:locale" content="fr" />
+<meta name="description" content="One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. Let’s see how we can ease things." />
+<meta name="twitter:description" property="og:description" content="One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. Let’s see how we can ease things." />
+<link rel="canonical" href="https://neirda24.github.io/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/" />
+<meta property="og:url" content="https://neirda24.github.io/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/" />
+<meta property="og:site_name" content="roc-it.tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-10-10T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-10-10T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Seamless usage of docker in any apps" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2022-10-10T00:00:00+00:00","datePublished":"2022-10-10T00:00:00+00:00","description":"One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. Let’s see how we can ease things.","headline":"Seamless usage of docker in any apps","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/"},"url":"https://neirda24.github.io/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/articles/assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-title" href="/articles/">roc-it.tech</a>
+    <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+  </header>
+  <main class="site-content">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Seamless usage of docker in any apps</h1>
+    <p class="post-meta">
+      10 October 2022 · docker, php, symfony, tips
+    </p>
+  </header>
+  <div class="post-content">
+    <p>One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. Let’s see how we can ease things.</p>
+
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<ol>
+  <li><a href="#whats-this-about">What’s this about ?</a></li>
+  <li><a href="#how-does-it-works">How does it works ?</a></li>
+  <li><a href="#how-to-use-it">How to use it ?</a></li>
+  <li><a href="#help-wanted">Help wanted</a></li>
+</ol>
+
+<hr />
+
+<h2 id="whats-this-about">What’s this about ?</h2>
+
+<p>In 2022, I believe a lot of us are using docker &amp; docker compose on daily basis. We see a lot of ways on how to interact with it. Some use the raw command line, some wrap it up in Makefile’s and there may be other ways.</p>
+
+<p>Here are the constraints we have :</p>
+
+<ul>
+  <li>MUST work on multiple machine (ARM / AMD, Ubuntu, MacOS, …)</li>
+  <li>MUST accept parameters</li>
+  <li>SHOULD not affect the current user setup too drastically</li>
+  <li>MUST be on a per project basis to avoid side effects</li>
+  <li>MUST be opt-in</li>
+  <li>SHOULD make the developper forget about docker</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>functions.sh</th>
+      <th>Makefile</th>
+      <th>Vanilla</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Multi-Platform</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Per-Project</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Accept parameters</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Daily usage</td>
+      <td>easy</td>
+      <td>partial</td>
+      <td>hard</td>
+    </tr>
+    <tr>
+      <td>Learning curve</td>
+      <td>easy</td>
+      <td>medium</td>
+      <td>hard</td>
+    </tr>
+    <tr>
+      <td>Extensibility</td>
+      <td>easy</td>
+      <td>hard</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Now I’ll present what I’ve been using for 5+ years now. First here is the script then I’ll explain. (<a href="https://gist.github.com/Neirda24/32c400034a355edfa0c860af62edd7f4">sources</a>).</p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/base_functions.sh.png" alt="functions.sh" loading="lazy" />
+  <figcaption>functions.sh</figcaption>
+</figure>
+
+<h2 id="how-does-it-works">How does it works ?</h2>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/current_bash-1.png" alt="Guessing the current bash" loading="lazy" />
+  <figcaption>Guessing the current bash</figcaption>
+</figure>
+
+<p>This is the tricky part that does the heavy magic. Basically we try to guess the current directory the <code class="language-plaintext highlighter-rouge">functions.sh</code> file is in. But because shell script : we have to guess using different methods depending on the shell of your choosing. Here I “support” only <code class="language-plaintext highlighter-rouge">bash</code> and <code class="language-plaintext highlighter-rouge">zsh</code>.</p>
+
+<p>This script should work on any mac / ubuntu based distribution.</p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/path_helpers-1.png" alt="Path helpers" loading="lazy" />
+  <figcaption>Path helpers</figcaption>
+</figure>
+
+<p>Firstly I assume that you have a <code class="language-plaintext highlighter-rouge">.env</code> in the same directory as the <code class="language-plaintext highlighter-rouge">functions.sh</code> file. Usually it is the same as the docker compose one (see <a href="https://docs.docker.com/compose/env-file/">https://docs.docker.com/compose/env-file/</a>).</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">__getSubPath</code> function is to detect if you are in a subdirectory of the <code class="language-plaintext highlighter-rouge">APP_PROJECT_PATH</code>. If so we use the relative subdirectory, empty otherwise.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">__docker_exec</code> function is to facilitate the use of the previous function and the working directory (here I assume <code class="language-plaintext highlighter-rouge">/var/www/html</code>).</p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/function_php-1.png" alt="The PHP function" loading="lazy" />
+  <figcaption>The PHP function</figcaption>
+</figure>
+
+<p>Finally we declare the alias we want. This is the simple part. First we make sure that nothing prevents us from declaring a php function by running the unalias. Then we declare the php which is what you would type (almost) if you were not using any wrapper of some sort. Except that we accept an infinite number of parameters thanks to <code class="language-plaintext highlighter-rouge">$*</code>. Finally we make it globally available.</p>
+
+<h2 id="how-to-use-it">How to use it ?</h2>
+
+<p>Once you created the file you will have to run the following every time you open a new bash session (new window, new tab, …).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">source</span> ./functions.sh
+</code></pre></div></div>
+
+<p>From now on if you type</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp
+<span class="nv">$ </span>php <span class="nt">--version</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>is equivalent to</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp
+<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/'</span> myapp_php bash <span class="nt">-c</span> <span class="s2">"php --version"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>and</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp/src/Bundle/SomeBundle
+<span class="nv">$ </span>php <span class="nt">--version</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>is equivalent to</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp/src/Bundle/SomeBundle
+<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/src/Bundle/SomeBundle'</span> myapp_php bash <span class="nt">-c</span> <span class="s2">"php --version"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>It will be running inside the container itself so you won’t have to think about it anymore.</p>
+
+<h2 id="help-wanted">Help wanted</h2>
+
+<p>There are still some things I couldn’t figure out yet :</p>
+
+<ol>
+  <li>auto source / unsource when entering the project directory. I tried <a href="https://github.com/alecthomas/ondir">ondir</a> but it is not well maintained so I didn’t stick to it.</li>
+  <li>When running <code class="language-plaintext highlighter-rouge">$ php &lt;TAB&gt;&lt;TAB&gt;</code> it will use your host autocomplete instead of the container one.</li>
+</ol>
+
+
+  </div>
+</article>
+
+  </main>
+  <footer class="site-footer">
+    <p>&copy; 2026 Adrien Roches</p>
+  </footer>
+</body>
+</html>

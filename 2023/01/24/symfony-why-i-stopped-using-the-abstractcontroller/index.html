@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>Symfony : why I stopped using the AbstractController | roc-it.tech</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Symfony : why I stopped using the AbstractController" />
+<meta name="author" content="Adrien Roches" />
+<meta property="og:locale" content="fr" />
+<meta name="description" content="A typical Controller in Symfony may look like this :" />
+<meta name="twitter:description" property="og:description" content="A typical Controller in Symfony may look like this :" />
+<link rel="canonical" href="https://neirda24.github.io/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/" />
+<meta property="og:url" content="https://neirda24.github.io/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/" />
+<meta property="og:site_name" content="roc-it.tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-01-24T00:00:00+00:00" />
+<meta property="article:modified_time" content="2023-01-24T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Symfony : why I stopped using the AbstractController" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2023-01-24T00:00:00+00:00","datePublished":"2023-01-24T00:00:00+00:00","description":"A typical Controller in Symfony may look like this :","headline":"Symfony : why I stopped using the AbstractController","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/"},"url":"https://neirda24.github.io/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/articles/assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-title" href="/articles/">roc-it.tech</a>
+    <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+  </header>
+  <main class="site-content">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Symfony : why I stopped using the AbstractController</h1>
+    <p class="post-meta">
+      24 January 2023 · symfony, php
+    </p>
+  </header>
+  <div class="post-content">
+    <p>A typical Controller in Symfony may look like this :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">use</span> <span class="nc">Symfony\Bundle\FrameworkBundle\Controller\AbstractController</span><span class="p">;</span>
+
+<span class="kd">class</span> <span class="nc">HelloController</span> <span class="kd">extends</span> <span class="nc">AbstractController</span>
+<span class="p">{</span>
+    <span class="err">#</span><span class="p">[</span><span class="nf">Route</span><span class="p">(</span>
+        <span class="n">path</span><span class="o">:</span> <span class="s1">'/hello/{name}'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">:</span> <span class="s1">'app_hello'</span><span class="p">,</span>
+        <span class="n">requirements</span><span class="o">:</span> <span class="p">[</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'[a-zA-Z-]+'</span><span class="p">],</span>
+        <span class="n">methods</span><span class="o">:</span> <span class="p">[</span><span class="s1">'GET'</span><span class="p">]</span>
+    <span class="p">)]</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">index</span><span class="p">(</span><span class="kt">string</span> <span class="nv">$name</span> <span class="o">=</span> <span class="s1">'Adrien'</span><span class="p">):</span> <span class="kt">Response</span>
+    <span class="p">{</span>
+        <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createForm</span><span class="p">(</span><span class="nc">SomeFormType</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+        
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">render</span><span class="p">(</span><span class="s1">'hello.html.twig'</span><span class="p">,</span> <span class="p">[</span>
+            <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span> 
+            <span class="s1">'form'</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="p">,</span>
+        <span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>It is perfectly fine of course but there are a few things we can improve.</p>
+
+<h2 id="what-are-the-dependencies-">What are the dependencies ?</h2>
+
+<p>By calling <code class="language-plaintext highlighter-rouge">$this-&gt;render(...)</code>, it hides what are the dependencies. Indeed we did not provide anything through the usual ways : <code class="language-plaintext highlighter-rouge">__construct</code>, <code class="language-plaintext highlighter-rouge">setter</code>, <code class="language-plaintext highlighter-rouge">properties</code> (See <a href="https://symfony.com/doc/6.2/service_container/autowiring.html#autowiring-other-methods-e-g-setters-and-public-typed-properties">documentation</a>)</p>
+
+<p>So what are we using and how do I have access to it ?</p>
+
+<p>Taking a look at the <code class="language-plaintext highlighter-rouge">AbstractController::render(...)</code> method <a href="https://github.com/symfony/symfony/blob/6.2/src/Symfony/Bundle/FrameworkBundle/Controller/AbstractController.php#L251">here</a> we can see it is using the <code class="language-plaintext highlighter-rouge">twig</code> service. But it is not declared as a dependency so how does it work ?</p>
+
+<p>It is another feature called “Service Subscriber”, which AFAIK is only used by controllers. Basically it is a “Service Locator” where the class defines itself which are its dependencies.</p>
+
+<p>Besides <code class="language-plaintext highlighter-rouge">twig</code> there are (ATM) 9 additional dependencies declared this way which are (<a href="https://github.com/symfony/symfony/blob/6.2/src/Symfony/Bundle/FrameworkBundle/Controller/AbstractController.php#L85">source</a>) :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="n">getSubscribedServices</span><span class="p">():</span> <span class="kt">array</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="s1">'router'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">RouterInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'request_stack'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">RequestStack</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'http_kernel'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">HttpKernelInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'serializer'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">SerializerInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'security.authorization_checker'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">AuthorizationCheckerInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'twig'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">Environment</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'form.factory'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">FormFactoryInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'security.token_storage'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">TokenStorageInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'security.csrf.token_manager'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">CsrfTokenManagerInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+        <span class="s1">'parameter_bag'</span> <span class="o">=&gt;</span> <span class="s1">'?'</span><span class="mf">.</span><span class="nc">ContainerBagInterface</span><span class="o">::</span><span class="n">class</span><span class="p">,</span>
+    <span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>It makes the dependencies very blurry IMO as we have to dig into the class to discover what is already accessible from the <code class="language-plaintext highlighter-rouge">$this-&gt;container-&gt;get(...)</code>.</p>
+
+<h2 id="how-does-the-request-request-work-">How does the <code class="language-plaintext highlighter-rouge">Request $request</code> work ?</h2>
+
+<p>My argument here could seem a bit off, but I found that a lot of symfony developers doesn’t know anymore that to be able to reference the <code class="language-plaintext highlighter-rouge">Request</code> class within a controller method, you need your controller class to be tagged with <code class="language-plaintext highlighter-rouge">controller.service_arguments</code>.</p>
+
+<p>Part of why I think people don’t know that is because by extending the <code class="language-plaintext highlighter-rouge">AbstractController</code> + using <code class="language-plaintext highlighter-rouge">autoconfigure: true</code> it will automatically add it. I know it is supposed to help and it does. But if you understand that by leveling up your team on symfony core functionnalities, they will become more and more productive then they might miss this.</p>
+
+<p>Same argument could be applied to any service that is “autoconfigured” but</p>
+
+<ol>
+  <li>In general it refers to an Interface instead of an Abstract class</li>
+  <li>It doesn’t alter your class with unwanted / unneeded dependencies.</li>
+</ol>
+
+<h2 id="it-hides-what-it-really-does">It hides what it really does</h2>
+
+<p>⚡️ Quizz : what changed in the render method in 6.2 ?<br />
+➡️➡️➡️ The way <code class="language-plaintext highlighter-rouge">Form</code> is handled.</p>
+
+<p>Here is the explanation : normally if you need to pass on a form from a controller to a template (twig), then you learned to do it this way (prior to 6.2) :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">use</span> <span class="nc">Symfony\Bundle\FrameworkBundle\Controller\AbstractController</span><span class="p">;</span>
+
+<span class="kd">class</span> <span class="nc">HelloController</span> <span class="kd">extends</span> <span class="nc">AbstractController</span>
+<span class="p">{</span>
+    <span class="err">#</span><span class="p">[</span><span class="nf">Route</span><span class="p">(</span>
+        <span class="n">path</span><span class="o">:</span> <span class="s1">'/hello/{name}'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">:</span> <span class="s1">'app_hello'</span><span class="p">,</span>
+        <span class="n">requirements</span><span class="o">:</span> <span class="p">[</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'[a-zA-Z-]+'</span><span class="p">],</span>
+        <span class="n">methods</span><span class="o">:</span> <span class="p">[</span><span class="s1">'GET'</span><span class="p">]</span>
+    <span class="p">)]</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">index</span><span class="p">(</span><span class="kt">string</span> <span class="nv">$name</span> <span class="o">=</span> <span class="s1">'Adrien'</span><span class="p">):</span> <span class="kt">Response</span>
+    <span class="p">{</span>
+        <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createForm</span><span class="p">(</span><span class="nc">SomeFormType</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+        
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">render</span><span class="p">(</span><span class="s1">'hello.html.twig'</span><span class="p">,</span> <span class="p">[</span>
+            <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span> 
+            <span class="s1">'form'</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="nf">createView</span><span class="p">(),</span>
+        <span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>now you can change it like so :</p>
+
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gd">-            'form' =&gt; $form-&gt;createView(),
+</span><span class="gi">+            'form' =&gt; $form,
+</span></code></pre></div></div>
+
+<p>Easier right ? But is it because twig changed the way it handles forms ? Not at all ! Taking a look at this code (<a href="https://github.com/symfony/symfony/blob/6.2/src/Symfony/Bundle/FrameworkBundle/Controller/AbstractController.php#L236">source</a>)</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">foreach</span> <span class="p">(</span><span class="nv">$parameters</span> <span class="k">as</span> <span class="nv">$k</span> <span class="o">=&gt;</span> <span class="nv">$v</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$v</span> <span class="k">instanceof</span> <span class="nc">FormInterface</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$parameters</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$v</span><span class="o">-&gt;</span><span class="nf">createView</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>from the <code class="language-plaintext highlighter-rouge">AbstractController</code> it clearly shows that it iterates over all the parameters you gave to do it for you. Meaning that if you go from this <code class="language-plaintext highlighter-rouge">AbstractController</code> to a lighter one like I’ll show later, then you have to change this yourself otherwise it won’t work.</p>
+
+<h2 id="it-may-break-your-application">It may break your application</h2>
+
+<p>Maybe you already have built some simple HTTP API using <code class="language-plaintext highlighter-rouge">return $this-&gt;json(...)</code> ? But how does it work ? Take a look at the code (<a href="https://github.com/symfony/symfony/blob/6.2/src/Symfony/Bundle/FrameworkBundle/Controller/AbstractController.php#L150">source</a>)</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">protected</span> <span class="k">function</span> <span class="n">json</span><span class="p">(</span>
+    <span class="kt">mixed</span> <span class="nv">$data</span><span class="p">,</span>
+    <span class="kt">int</span> <span class="nv">$status</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="kt">array</span> <span class="nv">$headers</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="kt">array</span> <span class="nv">$context</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="p">):</span> <span class="kt">JsonResponse</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">container</span><span class="o">-&gt;</span><span class="nf">has</span><span class="p">(</span><span class="s1">'serializer'</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nv">$json</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">container</span><span class="o">-&gt;</span><span class="nf">get</span><span class="p">(</span><span class="s1">'serializer'</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">serialize</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="s1">'json'</span><span class="p">,</span> <span class="nb">array_merge</span><span class="p">([</span>
+            <span class="s1">'json_encode_options'</span> <span class="o">=&gt;</span> <span class="nc">JsonResponse</span><span class="o">::</span><span class="no">DEFAULT_ENCODING_OPTIONS</span><span class="p">,</span>
+        <span class="p">],</span> <span class="nv">$context</span><span class="p">));</span>
+
+        <span class="k">return</span> <span class="k">new</span> <span class="nc">JsonResponse</span><span class="p">(</span><span class="nv">$json</span><span class="p">,</span> <span class="nv">$status</span><span class="p">,</span> <span class="nv">$headers</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nc">JsonResponse</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="nv">$status</span><span class="p">,</span> <span class="nv">$headers</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The issue is that if you didn’t had the <code class="language-plaintext highlighter-rouge">Serializer</code> component installed then the encoding of your data will be handled by the <code class="language-plaintext highlighter-rouge">JsonResponse</code> class which does <code class="language-plaintext highlighter-rouge">json_encode</code>. But at the moment you install the <code class="language-plaintext highlighter-rouge">Seralizer</code> component then the behaviour changes and the output may differ as well.</p>
+
+<h2 id="what-is-the-alternative-">What is the alternative ?</h2>
+
+<p>Here is what I propose :</p>
+
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gd">-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+</span><span class="gi">+use Symfony\Component\Form\FormFactoryInterface;
++use Twig\Environment;
+</span><span class="err">
+</span><span class="gd">-class HelloController extends AbstractController
+</span><span class="gi">+class HelloController
+</span>{
+<span class="gi">+    public function __construct(
++        private readonly Environment $twig,
++        private readonly FormFactoryInterface $formFactory,
++    ) {
++    }
+</span><span class="err">
+</span>    #[Route(
+        path: '/hello/{name}',
+        name: 'app_hello',
+        requirements: ['name' =&gt; '[a-zA-Z-]+'],
+        methods: ['GET']
+    )]
+    public function index(string $name = 'Adrien'): Response
+    {
+<span class="gd">-        $form = $this-&gt;createForm(SomeFormType::class);
+</span><span class="gi">+        $form = $this-&gt;formFactory-&gt;create(SomeFormType::class);
+</span>        
+<span class="gd">-        return $this-&gt;render('hello.html.twig', [
+</span><span class="gi">+        return $this-&gt;twig-&gt;render('hello.html.twig', [
+</span>            'name' =&gt; $name, 
+<span class="gd">-            'form' =&gt; $form,
+</span><span class="gi">+            'form' =&gt; $form-&gt;createView(),
+</span>        ]);
+    }
+}
+</code></pre></div></div>
+
+<p>and of course don’t forget to update your <code class="language-plaintext highlighter-rouge">services.yaml</code> configuration accordingly :</p>
+
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">services:
+</span>    _defaults:
+        autowire: true
+        autoconfigure: true
+        
+    App\Controller\:
+<span class="gd">-        resource: '../src/Controller/'
+</span><span class="gi">+        resource: '../src/Controller/**/*Controller.php'
++        tags: [{ name: 'controller.service_arguments' }]
+</span></code></pre></div></div>
+
+<p>I don’t think this alternative is more complicated than what symfony propose. Of course this was a very simple case. I recommend to always have a look at the <code class="language-plaintext highlighter-rouge">AbstractController</code> because there are also very useful tips like <a href="https://github.com/symfony/symfony/blob/6.2/src/Symfony/Bundle/FrameworkBundle/Controller/AbstractController.php#L259">this one</a> which sets the <code class="language-plaintext highlighter-rouge">422</code> status code if a form has been submitted but is not valid.</p>
+
+<hr />
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>There is nothing wrong using the <code class="language-plaintext highlighter-rouge">AbstractController</code> if you are building a very simple app that doesn’t require much maintenance.<br />
+But if you are building something that requires improved readability (== improved maintenance), you should consider moving away from the <code class="language-plaintext highlighter-rouge">AbstractController</code> to have explicit configurations.</p>
+
+
+  </div>
+</article>
+
+  </main>
+  <footer class="site-footer">
+    <p>&copy; 2026 Adrien Roches</p>
+  </footer>
+</body>
+</html>

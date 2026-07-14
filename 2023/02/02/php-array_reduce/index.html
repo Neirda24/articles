@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>PHP : nested use of array_* is a disguised array_reduce | roc-it.tech</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="PHP : nested use of array_* is a disguised array_reduce" />
+<meta name="author" content="Adrien Roches" />
+<meta property="og:locale" content="fr" />
+<meta name="description" content="I feel like in javascript you see a lot of [...].reduce() but not so much in PHP. It may be a shame not to use it because it can help you write more readable code and with less iterations." />
+<meta name="twitter:description" property="og:description" content="I feel like in javascript you see a lot of [...].reduce() but not so much in PHP. It may be a shame not to use it because it can help you write more readable code and with less iterations." />
+<link rel="canonical" href="https://neirda24.github.io/articles/2023/02/02/php-array_reduce/" />
+<meta property="og:url" content="https://neirda24.github.io/articles/2023/02/02/php-array_reduce/" />
+<meta property="og:site_name" content="roc-it.tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-02-02T00:00:00+00:00" />
+<meta property="article:modified_time" content="2023-02-02T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="PHP : nested use of array_* is a disguised array_reduce" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2023-02-02T00:00:00+00:00","datePublished":"2023-02-02T00:00:00+00:00","description":"I feel like in javascript you see a lot of [...].reduce() but not so much in PHP. It may be a shame not to use it because it can help you write more readable code and with less iterations.","headline":"PHP : nested use of array_* is a disguised array_reduce","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2023/02/02/php-array_reduce/"},"url":"https://neirda24.github.io/articles/2023/02/02/php-array_reduce/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/articles/assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-title" href="/articles/">roc-it.tech</a>
+    <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+  </header>
+  <main class="site-content">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title">PHP : nested use of array_* is a disguised array_reduce</h1>
+    <p class="post-meta">
+      02 February 2023 · php, tips
+    </p>
+  </header>
+  <div class="post-content">
+    <p>I feel like in javascript you see a lot of <code class="language-plaintext highlighter-rouge">[...].reduce()</code> but not so much in PHP. It may be a shame not to use it because it can help you write more readable code and with less iterations.</p>
+
+<h2 id="array_reduce-is-all-other-array_-">array_reduce is all other array_* …</h2>
+
+<p>Any <code class="language-plaintext highlighter-rouge">array_*</code> function can be replaced with an <code class="language-plaintext highlighter-rouge">array_reduce</code> let’s see some example. Don’t be fooled by its name, it doesn’t necessarily reduce your array to less elements.</p>
+
+<h3 id="array_map">array_map</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_map</span><span class="p">(</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">string</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nv">$original</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>is the same as</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_reduce</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$result</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+            <span class="nv">$result</span><span class="p">[]</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+            <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Performance comparison</p>
+
+<p>With <a href="https://3v4l.org/FpgPi/perf"><code class="language-plaintext highlighter-rouge">array_map</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.32.24.png" alt="Perf: array_map" loading="lazy" />
+  <figcaption>Perf: array_map</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/8Ihta/perf"><code class="language-plaintext highlighter-rouge">array_reduce</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.38.21.png" alt="Perf: array_map as array_reduce" loading="lazy" />
+  <figcaption>Perf: array_map as array_reduce</figcaption>
+</figure>
+
+<h3 id="array_filter">array_filter</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_filter</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">bool</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nb">str_starts_with</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="s1">'11'</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>is the same as</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_reduce</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$result</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">str_starts_with</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="s1">'11'</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nv">$result</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$item</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Performance comparison</p>
+
+<p>With <a href="https://3v4l.org/rQHlF/perf"><code class="language-plaintext highlighter-rouge">array_filter</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.44.06.png" alt="Perf: array_filter" loading="lazy" />
+  <figcaption>Perf: array_filter</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/ccIn9/perf"><code class="language-plaintext highlighter-rouge">array_reduce</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.44.13.png" alt="Perf: array_filter as array_reduce" loading="lazy" />
+  <figcaption>Perf: array_filter as array_reduce</figcaption>
+</figure>
+
+<h3 id="array_column">array_column</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_column</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="s1">'name'</span><span class="p">,</span>
+        <span class="s1">'id'</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>is the same as</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_reduce</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$result</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+            <span class="nv">$result</span><span class="p">[</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]]</span> <span class="o">=</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">];</span>
+            <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Performance comparison</p>
+
+<p>With <a href="https://3v4l.org/T03XF/perf"><code class="language-plaintext highlighter-rouge">array_column</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.46.42.png" alt="Perf: array_filter" loading="lazy" />
+  <figcaption>Perf: array_filter</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/kt8JE/perf"><code class="language-plaintext highlighter-rouge">array_reduce</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.47.17.png" alt="Perf: array_column as array_reduce" loading="lazy" />
+  <figcaption>Perf: array_column as array_reduce</figcaption>
+</figure>
+
+<h2 id="-but-more-powerful">… but more powerful</h2>
+
+<p>Combining multiple <code class="language-plaintext highlighter-rouge">array_*</code> can be hard to read and suffer from multiple iterations.</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_map</span><span class="p">(</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">string</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nb">array_filter</span><span class="p">(</span>
+            <span class="nv">$original</span><span class="p">,</span>
+            <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">bool</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nb">str_starts_with</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="s1">'11'</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>can be written as</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+    
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_reduce</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$result</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">str_starts_with</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="s1">'11'</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nv">$result</span><span class="p">[]</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>which requires only one iteration over the <code class="language-plaintext highlighter-rouge">$original</code> array and make it clear of what we do with each element in this array.</p>
+
+<p>Performance comparison</p>
+
+<p>With <a href="https://3v4l.org/SOetO/perf">nested operations</a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.51.25.png" alt="Perf: nested operations" loading="lazy" />
+  <figcaption>Perf: nested operations</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/M7mOn/perf"><code class="language-plaintext highlighter-rouge">array_reduce</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--09.51.31.png" alt="Perf: nested operations with array_reduce" loading="lazy" />
+  <figcaption>Perf: nested operations with array_reduce</figcaption>
+</figure>
+
+<h2 id="beware-some-feature-may-require-a-weird-syntax">Beware some feature may require a weird syntax</h2>
+
+<p>There are still caveats using it because it doesn’t give you the <code class="language-plaintext highlighter-rouge">key</code> of each <code class="language-plaintext highlighter-rouge">item</code> you iterate over which means that basically :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'key1'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s1">'key2'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_map</span><span class="p">(</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">string</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nv">$original</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>is <strong>NOT</strong> the same as</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$original</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'key1'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'1111'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'first'</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s1">'key2'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'2222'</span><span class="p">,</span>
+        <span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nb">var_dump</span><span class="p">(</span>
+    <span class="nb">array_reduce</span><span class="p">(</span>
+        <span class="nv">$original</span><span class="p">,</span>
+        <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$result</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+            <span class="nv">$result</span><span class="p">[]</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+            <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">array_map</code> would preserve the keys but the <code class="language-plaintext highlighter-rouge">array_reduce</code> will convert it to a list (with incremental numeric keys).</p>
+
+<p>To have access to the keys as well you need a “trick” :</p>
+
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$original = [
+    'key1' =&gt; [
+        'id' =&gt; '1111',
+        'name' =&gt; 'first',
+    ],
+    'key2' =&gt; [
+        'id' =&gt; '2222',
+        'name' =&gt; 'second',
+    ],
+];
+<span class="err">
+</span><span class="p">var_dump(
+</span>    array_reduce(
+<span class="gd">-       $original,
+</span><span class="gi">+       array_keys($original),
+</span><span class="gd">-       static function (array $result, array $item): array {
+</span><span class="gi">+       static function (array $result, array $key) use ($original): array {
++           $item = $original[$key];           
+</span><span class="gd">-           $result[] = "{$item['id']}#{$item['name']}";
+</span><span class="gi">+           $result[$key] = "{$item['id']}#{$item['name']}";
+</span>            return $result;
+        },
+        []
+    )
+);
+</code></pre></div></div>
+
+<h2 id="advanced-example">Advanced example</h2>
+
+<p>The following example is based on these assumptions :</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">$canonicalIds</code> represent the id’s that you already have in storage (eg in your database)</li>
+  <li>The user makes a <code class="language-plaintext highlighter-rouge">PUT</code> request on your collection meaning it want to update, create &amp; delete some ressources in the same request.</li>
+</ul>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$canonicalIds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'first'</span><span class="p">,</span>
+    <span class="s1">'second'</span><span class="p">,</span>
+    <span class="s1">'third'</span><span class="p">,</span>
+    <span class="s1">'fourth'</span><span class="p">,</span>
+    <span class="s1">'fifth'</span><span class="p">,</span>
+    <span class="s1">'sixth'</span><span class="p">,</span>
+<span class="p">];</span>
+
+<span class="nv">$putContent</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fifth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">55</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">22</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fourth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">44</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="kc">null</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="p">[</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">]</span> <span class="o">=</span> <span class="nb">array_reduce</span><span class="p">(</span>
+    <span class="nv">$putContent</span><span class="p">,</span>
+    <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$carry</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$item</span><span class="p">)</span> <span class="k">use</span> <span class="p">(</span><span class="nv">$canonicalIds</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+        <span class="p">[</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$carry</span><span class="p">;</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="kc">null</span> <span class="o">===</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">])</span> <span class="p">{</span>
+            <span class="nv">$toCreate</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$item</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">elseif</span> <span class="p">(</span><span class="kc">true</span> <span class="o">===</span> <span class="nb">in_array</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="nv">$canonicalIds</span><span class="p">,</span> <span class="kc">true</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$toUpdate</span><span class="p">[</span><span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]]</span> <span class="o">=</span> <span class="nv">$item</span><span class="p">;</span>
+        <span class="p">}</span>
+        
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="nv">$toCreate</span><span class="p">,</span>
+            <span class="nv">$toUpdate</span>
+        <span class="p">];</span>
+    <span class="p">},</span>
+    <span class="p">[</span>
+        <span class="p">[],</span>
+        <span class="p">[]</span>
+    <span class="p">]</span>
+<span class="p">);</span>
+
+<span class="nv">$toDelete</span> <span class="o">=</span> <span class="nb">array_diff</span><span class="p">(</span><span class="nv">$canonicalIds</span><span class="p">,</span> <span class="nb">array_keys</span><span class="p">(</span><span class="nv">$toUpdate</span><span class="p">));</span>
+
+<span class="nb">var_dump</span><span class="p">(</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">,</span> <span class="nv">$toDelete</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>You now have 3 different variables with each their context. You can now safely tell doctrine for example what to do for each of the id (INSERT, UPDATE or DELETE).</p>
+
+<p>Comparison</p>
+
+<p>Basic equivalent with multiple usage of <code class="language-plaintext highlighter-rouge">array_*</code> functions :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+
+<span class="nv">$canonicalIds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'first'</span><span class="p">,</span>
+    <span class="s1">'second'</span><span class="p">,</span>
+    <span class="s1">'third'</span><span class="p">,</span>
+    <span class="s1">'fourth'</span><span class="p">,</span>
+    <span class="s1">'fifth'</span><span class="p">,</span>
+    <span class="s1">'sixth'</span><span class="p">,</span>
+<span class="p">];</span>
+
+<span class="nv">$putContent</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fifth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">55</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">22</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fourth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">44</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="kc">null</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="nv">$toCreate</span> <span class="o">=</span> <span class="nb">array_filter</span><span class="p">(</span><span class="nv">$putContent</span><span class="p">,</span> <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$item</span><span class="p">):</span> <span class="kt">bool</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kc">null</span> <span class="o">===</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">'id'</span><span class="p">];</span>
+<span class="p">});</span>
+
+<span class="nv">$toUpdate</span> <span class="o">=</span> <span class="nb">array_uintersect</span><span class="p">(</span>
+    <span class="nv">$putContent</span><span class="p">,</span> 
+    <span class="nb">array_map</span><span class="p">(</span><span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">string</span> <span class="nv">$id</span><span class="p">):</span> <span class="kt">array</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="nv">$id</span><span class="p">];</span>
+    <span class="p">},</span> <span class="nv">$canonicalIds</span><span class="p">),</span>
+    <span class="k">static</span> <span class="k">function</span> <span class="p">(</span><span class="kt">array</span> <span class="nv">$putItem</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$canonicalItem</span><span class="p">):</span> <span class="kt">int</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$putItem</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span> <span class="o">&lt;=&gt;</span> <span class="nv">$canonicalItem</span><span class="p">[</span><span class="s1">'id'</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">);</span>
+
+<span class="nv">$toDelete</span> <span class="o">=</span> <span class="nb">array_diff</span><span class="p">(</span><span class="nv">$canonicalIds</span><span class="p">,</span> <span class="nb">array_column</span><span class="p">(</span><span class="nv">$toUpdate</span><span class="p">,</span> <span class="s1">'id'</span><span class="p">));</span>
+
+<span class="nb">var_dump</span><span class="p">(</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">,</span> <span class="nv">$toDelete</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>or using foreach :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$canonicalIds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'first'</span><span class="p">,</span>
+    <span class="s1">'second'</span><span class="p">,</span>
+    <span class="s1">'third'</span><span class="p">,</span>
+    <span class="s1">'fourth'</span><span class="p">,</span>
+    <span class="s1">'fifth'</span><span class="p">,</span>
+    <span class="s1">'sixth'</span><span class="p">,</span>
+<span class="p">];</span>
+
+<span class="nv">$putContent</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fifth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">55</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'second'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">22</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="s1">'fourth'</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">44</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">'id'</span> <span class="o">=&gt;</span> <span class="kc">null</span><span class="p">,</span>
+        <span class="s1">'value'</span> <span class="o">=&gt;</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+
+<span class="k">function</span> <span class="n">mySort</span><span class="p">(</span><span class="kt">array</span> <span class="nv">$canonicalIds</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$putContent</span><span class="p">):</span> <span class="kt">array</span>
+<span class="p">{</span>
+    <span class="nv">$toCreate</span> <span class="o">=</span> <span class="nv">$toUpdate</span> <span class="o">=</span> <span class="p">[];</span>
+    
+    <span class="k">foreach</span> <span class="p">(</span><span class="nv">$putContent</span> <span class="k">as</span> <span class="nv">$putItem</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="kc">null</span> <span class="o">===</span> <span class="nv">$putItem</span><span class="p">[</span><span class="s1">'id'</span><span class="p">])</span> <span class="p">{</span>
+            <span class="nv">$toCreate</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$putItem</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">elseif</span> <span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$putItem</span><span class="p">[</span><span class="s1">'id'</span><span class="p">],</span> <span class="nv">$canonicalIds</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span> <span class="o">===</span> <span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$toUpdate</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$putItem</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    
+    <span class="nv">$toDelete</span> <span class="o">=</span> <span class="nb">array_diff</span><span class="p">(</span><span class="nv">$canonicalIds</span><span class="p">,</span> <span class="nb">array_column</span><span class="p">(</span><span class="nv">$toUpdate</span><span class="p">,</span> <span class="s1">'id'</span><span class="p">));</span>
+    
+    <span class="k">return</span> <span class="p">[</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">,</span> <span class="nv">$toDelete</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">,</span> <span class="nv">$toDelete</span><span class="p">]</span> <span class="o">=</span> <span class="nf">mySort</span><span class="p">(</span><span class="nv">$canonicalIds</span><span class="p">,</span> <span class="nv">$putContent</span><span class="p">);</span>
+
+<span class="nb">var_dump</span><span class="p">(</span><span class="nv">$toCreate</span><span class="p">,</span> <span class="nv">$toUpdate</span><span class="p">,</span> <span class="nv">$toDelete</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Performances :</p>
+
+<p>With <a href="https://3v4l.org/A0vNU/perf"><code class="language-plaintext highlighter-rouge">array_reduce</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--10.15.55.png" alt="With array_reduce" loading="lazy" />
+  <figcaption>With array_reduce</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/lp2E7/perf">multiple <code class="language-plaintext highlighter-rouge">array_*</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--10.16.02.png" alt="With multiple array functions" loading="lazy" />
+  <figcaption>With multiple array functions</figcaption>
+</figure>
+
+<p>With <a href="https://3v4l.org/OuAgX/perf"><code class="language-plaintext highlighter-rouge">foreach</code></a></p>
+
+<figure class="post-figure post-figure--center">
+  <img src="/articles/assets/img/php-array_reduce/Capture-d-e-cran-2023-02-02-a--10.16.10.png" alt="With foreach" loading="lazy" />
+  <figcaption>With foreach</figcaption>
+</figure>
+
+<hr />
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>At first the <code class="language-plaintext highlighter-rouge">array_reduce</code> seems more complicated because you have a variable that is carried over each iteration that you can modify. In the end you can see this as “call this function for each item and take what I return as the base for the next iteration. When done return this result as the final one.”.</p>
+
+<p>To me it helps reducing the number of iteration and improve readability over mutliple <code class="language-plaintext highlighter-rouge">array_*</code> functions.</p>
+
+<p>Performance wise you won’t gain much except if you intricate multiple array functions otherwise you might even lose some performance. Considering the numbers in display I don’t think this should be an issue for most of the projects out there.</p>
+
+<p>Regarding the last example (Advanced one) the foreach might be easier to implement / read but beware that I created a function (or a method if in a class) to avoid leaking unnecessary variables.</p>
+
+<p>Let me know what you think !</p>
+
+
+  </div>
+</article>
+
+  </main>
+  <footer class="site-footer">
+    <p>&copy; 2026 Adrien Roches</p>
+  </footer>
+</body>
+</html>

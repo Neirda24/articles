@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>PHP : The fall of array | roc-it.tech</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="PHP : The fall of array" />
+<meta name="author" content="Adrien Roches" />
+<meta property="og:locale" content="fr" />
+<meta name="description" content="array is a very common type in PHP but is often overused. I’ll try to explain why you don’t (almost) need to type hint array anymore !" />
+<meta name="twitter:description" property="og:description" content="array is a very common type in PHP but is often overused. I’ll try to explain why you don’t (almost) need to type hint array anymore !" />
+<link rel="canonical" href="https://neirda24.github.io/articles/2023/02/23/php-the-fall-of-array/" />
+<meta property="og:url" content="https://neirda24.github.io/articles/2023/02/23/php-the-fall-of-array/" />
+<meta property="og:site_name" content="roc-it.tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-02-23T00:00:00+00:00" />
+<meta property="article:modified_time" content="2023-02-23T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="PHP : The fall of array" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Adrien Roches"},"dateModified":"2023-02-23T00:00:00+00:00","datePublished":"2023-02-23T00:00:00+00:00","description":"array is a very common type in PHP but is often overused. I’ll try to explain why you don’t (almost) need to type hint array anymore !","headline":"PHP : The fall of array","mainEntityOfPage":{"@type":"WebPage","@id":"https://neirda24.github.io/articles/2023/02/23/php-the-fall-of-array/"},"url":"https://neirda24.github.io/articles/2023/02/23/php-the-fall-of-array/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/articles/assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-title" href="/articles/">roc-it.tech</a>
+    <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+  </header>
+  <main class="site-content">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title">PHP : The fall of `array`</h1>
+    <p class="post-meta">
+      23 February 2023 · php, tips, doctrine
+    </p>
+  </header>
+  <div class="post-content">
+    <p><code class="language-plaintext highlighter-rouge">array</code> is a very common type in PHP but is often overused.<br />
+I’ll try to explain why you don’t (almost) need to type hint array anymore !</p>
+
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<ol>
+  <li><a href="#the-problems">The problems</a></li>
+  <li><a href="#first-steps">First steps</a></li>
+  <li><a href="#using-countable">Using <code class="language-plaintext highlighter-rouge">Countable</code></a></li>
+  <li><a href="#using-arrayaccess">Using <code class="language-plaintext highlighter-rouge">ArrayAccess</code></a></li>
+  <li><a href="#using-traversable">Using <code class="language-plaintext highlighter-rouge">Traversable</code></a><br />
+5.1. <a href="#the-hard-way-implementing-iterator">The hard way (implementing <code class="language-plaintext highlighter-rouge">Iterator</code>)</a><br />
+5.2. <a href="#the-easy-way-implementing-iteratoraggregate">The easy way (implementing <code class="language-plaintext highlighter-rouge">IteratorAggregate</code>)</a><br />
+5.3. <a href="#but-what-do-i-gain">But what do I gain ?</a></li>
+  <li><a href="#conclusion">Conclusion</a></li>
+</ol>
+
+<hr />
+
+<h2 id="the-problems">The problems</h2>
+
+<ol>
+  <li>
+    <p><strong>Businness logic</strong><br />
+Let’s first talk about why we need a replacement to <code class="language-plaintext highlighter-rouge">array</code>.<br />
+When declaring a simple parameter like <code class="language-plaintext highlighter-rouge">array $products</code> we often need to apply some domain logic on it : <code class="language-plaintext highlighter-rouge">groupByCategories</code>, <code class="language-plaintext highlighter-rouge">filterNonUnavailable</code>, <code class="language-plaintext highlighter-rouge">calculateTotalPrice</code>, … But where should we put all of these logic ? Often I see it repeated over multiple places in the code or in helper classes with naming or structure inconsistencies.</p>
+  </li>
+  <li>
+    <p><strong>Memory consumption</strong><br />
+Arrays are known to be memory intensive in PHP (see the tweet from Nikita Popov below).<br />
+Additionally, it cannot be generated on the fly (vs <code class="language-plaintext highlighter-rouge">Generator</code>’s that we will discuss later).</p>
+  </li>
+</ol>
+
+<blockquote>
+  <p>Some graphs comparing memory usage of arrays and objects (with declared properties) in PHP 7. Arrays need between 2x and 6x more memory. pic.twitter.com/9pKAJcsE4u</p>
+
+  <p>— <a href="https://twitter.com/nikita_ppv/status/847855830821109760?ref_src=twsrc%5Etfw">Voir sur Twitter/X</a></p>
+</blockquote>
+
+<ol>
+  <li>
+    <p><strong>ISP</strong><br />
+It always provides 3 different features : <code class="language-plaintext highlighter-rouge">Countable</code>, <code class="language-plaintext highlighter-rouge">Traversable</code>, <code class="language-plaintext highlighter-rouge">ArrayAccess</code> which you may not always have a need for.</p>
+  </li>
+  <li>
+    <p><strong>Keys must be <code class="language-plaintext highlighter-rouge">string</code> or <code class="language-plaintext highlighter-rouge">int</code></strong><br />
+When using an array you <strong>MUST</strong> use either a string or an int as key (⚠️ <code class="language-plaintext highlighter-rouge">float</code>s are automatically converted to <code class="language-plaintext highlighter-rouge">int</code> as well as numeric <code class="language-plaintext highlighter-rouge">string</code>).<br />
+Sometimes you may want to have a <code class="language-plaintext highlighter-rouge">DateTimeImmutable</code> as key or any objects. You even may want to have duplicated keys !</p>
+  </li>
+  <li>
+    <p><strong>Pass by value</strong><br />
+When you use an array variable to call a method or a function, PHP will actually duplicate that array everytime (pass by value). Object however are pass by reference.</p>
+  </li>
+</ol>
+
+<h2 id="first-steps">First steps</h2>
+
+<p>If you’ve made it this far you might be afraid of all the refactoring it may take ! Let me reassure you first and then explain how we can improve from this. Here is a simple class that does exactly the same as <code class="language-plaintext highlighter-rouge">array</code> :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @extends ArrayIterator&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">extends</span> <span class="nc">ArrayIterator</span>
+<span class="p">{</span>
+    <span class="cd">/**
+      * @param array&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="kt">array</span> <span class="nv">$products</span><span class="p">)</span> 
+    <span class="p">{</span>
+    	<span class="k">parent</span><span class="o">::</span><span class="nf">__construct</span><span class="p">(</span><span class="nv">$products</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Now you can typehint <code class="language-plaintext highlighter-rouge">ProductCollection $products</code> everywhere without changing anything else. It can be used in all similar way as <code class="language-plaintext highlighter-rouge">array</code> and PHPStorm will know that <code class="language-plaintext highlighter-rouge">$productCollection['someId']</code> will return a <code class="language-plaintext highlighter-rouge">Product</code> class.</p>
+
+<p><em>EDIT :</em> The object <strong>IS NOT</strong> compatible with <code class="language-plaintext highlighter-rouge">array_*</code> functions natively. You’ll need to use <code class="language-plaintext highlighter-rouge">iterator_to_array($productCollection)</code> to apply it to an <code class="language-plaintext highlighter-rouge">array_*</code> function. Either that or create a method on your object that will use the internal value.</p>
+
+<hr />
+
+<p>Seems enough right ? Well I said first step. Now let’s see how and why we can improve a bit further.</p>
+
+<h2 id="using-countable">Using <code class="language-plaintext highlighter-rouge">Countable</code></h2>
+
+<p>This one is very light and is often used in combination with the other two. If you only need to check the number in your array you can simply says that your class is <code class="language-plaintext highlighter-rouge">Countable</code> like so :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">implements</span> <span class="nc">Countable</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">count</span><span class="p">():</span> <span class="kt">int</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nb">count</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This class on its own is not very useful. Let’s dive into the other two.</p>
+
+<h2 id="using-arrayaccess">Using <code class="language-plaintext highlighter-rouge">ArrayAccess</code></h2>
+
+<p>Let’s say that now you want to provide the same syntax as <code class="language-plaintext highlighter-rouge">$productCollection[$productId]</code> to access data <strong>BUT</strong> you want to provide an immutable-like array.</p>
+
+<p>Here is an example:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @implements ArrayAccess&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">FrozenProductCollection</span> <span class="kd">implements</span> <span class="nc">ArrayAccess</span>
+<span class="p">{</span>
+    <span class="cd">/**
+      * @param array&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="k">private</span> <span class="k">readonly</span> <span class="kt">array</span> <span class="nv">$products</span><span class="p">)</span> 
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetExists</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">bool</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$offset</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetGet</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">mixed</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">[</span><span class="nv">$offset</span><span class="p">];</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetSet</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">,</span> <span class="kt">mixed</span> <span class="nv">$value</span><span class="p">):</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="p">(</span><span class="s1">'Cannot add a product to a FrozenProductCollection'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetUnset</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="p">(</span><span class="s1">'Cannot remove a product to a FrozenProductCollection'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>With this you can access data but you cannot remove or add new products to the Collection.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">offsetExists(mixed $offset): bool</code> : return true if entry at position <code class="language-plaintext highlighter-rouge">$offset</code> exists (used by <code class="language-plaintext highlighter-rouge">isset</code>, <code class="language-plaintext highlighter-rouge">??</code>, …</li>
+  <li><code class="language-plaintext highlighter-rouge">offsetGet(mixed $offset): mixed</code> : return the entry associated to the offset.</li>
+  <li><code class="language-plaintext highlighter-rouge">offsetSet(mixed $offset, mixed $value): void</code> : add / override an entry at the position <code class="language-plaintext highlighter-rouge">$offset</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">offsetUnset(mixed $offset): void</code> : remove an entry at the position <code class="language-plaintext highlighter-rouge">$offset</code></li>
+</ul>
+
+<p>Note that all these methods use <code class="language-plaintext highlighter-rouge">mixed</code> for <code class="language-plaintext highlighter-rouge">$offset</code>. So yes you could have a logic to <code class="language-plaintext highlighter-rouge">offsetGet</code> a <code class="language-plaintext highlighter-rouge">Product</code> by a given <code class="language-plaintext highlighter-rouge">ProductId</code> object or if you have a <code class="language-plaintext highlighter-rouge">ProductAlias</code> or whatever you want.</p>
+
+<p>You could even combine this with the basic class like so :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @extends ArrayIterator&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">extends</span> <span class="nc">ArrayIterator</span>
+<span class="p">{</span>
+    <span class="cd">/**
+      * @param array&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="kt">array</span> <span class="nv">$products</span><span class="p">)</span> 
+    <span class="p">{</span>
+    	<span class="k">parent</span><span class="o">::</span><span class="nf">__construct</span><span class="p">(</span><span class="nv">$products</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cd">/** @implements ArrayAccess&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">FrozenProductCollection</span> <span class="kd">implements</span> <span class="nc">ArrayAccess</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">private</span> <span class="k">readonly</span> <span class="kt">ProductCollection</span> <span class="nv">$products</span><span class="p">,</span>
+    <span class="p">)</span> <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetExists</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">bool</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nb">array_key_exists</span><span class="p">(</span><span class="nv">$offset</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetGet</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">mixed</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">[</span><span class="nv">$offset</span><span class="p">];</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetSet</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">,</span> <span class="kt">mixed</span> <span class="nv">$value</span><span class="p">):</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="p">(</span><span class="s1">'Cannot add a product to a FrozenProductCollection'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="n">offsetUnset</span><span class="p">(</span><span class="kt">mixed</span> <span class="nv">$offset</span><span class="p">):</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="p">(</span><span class="s1">'Cannot remove a product to a FrozenProductCollection'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nv">$productCollection</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">FrozenProductCollection</span><span class="p">(</span><span class="k">new</span> <span class="nc">ProductCollection</span><span class="p">([</span>
+    <span class="s1">'#123'</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nc">Product</span><span class="p">(</span>
+        <span class="n">id</span><span class="o">:</span> <span class="s1">'#123'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">:</span> <span class="s1">'t-shirt'</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">]));</span>
+
+<span class="nv">$productCollection</span><span class="p">[</span><span class="s1">'#456'</span><span class="p">]</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Product</span><span class="p">(</span>
+    <span class="n">id</span><span class="o">:</span> <span class="s1">'#456'</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">:</span> <span class="s1">'headband'</span><span class="p">,</span>
+<span class="p">);</span> <span class="c1">// This is now forbidden</span>
+</code></pre></div></div>
+
+<p>Decorator for the win 🎉 !</p>
+
+<h2 id="using-traversable">Using <code class="language-plaintext highlighter-rouge">Traversable</code></h2>
+
+<p>PHP interface <code class="language-plaintext highlighter-rouge">Traversable</code> is used to define an object that can be iterated over (with <code class="language-plaintext highlighter-rouge">foreach</code>). <code class="language-plaintext highlighter-rouge">array</code> is <code class="language-plaintext highlighter-rouge">Traversable</code> but objects can too ! LEt’s look how to implement it. You cannot implement Traversable directly (reserved for PHP) but you can either use <code class="language-plaintext highlighter-rouge">Iterator</code> or <code class="language-plaintext highlighter-rouge">IteratorAggregate</code>.</p>
+
+<h3 id="the-hard-way-implementing-iterator">The hard way (implementing <code class="language-plaintext highlighter-rouge">Iterator</code>)</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @implements Iterator&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">implements</span> <span class="nc">Iterator</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="kt">int</span> <span class="nv">$cursorPosition</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    
+    <span class="cd">/** @var array&lt;string&gt; */</span>
+    <span class="k">private</span> <span class="k">readonly</span> <span class="kt">array</span> <span class="nv">$keys</span><span class="p">;</span>
+    
+    <span class="cd">/** @var array&lt;Product&gt; */</span>
+    <span class="k">private</span> <span class="k">readonly</span> <span class="kt">array</span> <span class="nv">$products</span><span class="p">;</span>
+
+    <span class="cd">/**
+      * @param array&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="kt">array</span> <span class="nv">$products</span>
+    <span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">keys</span> <span class="o">=</span> <span class="nb">array_keys</span><span class="p">(</span><span class="nv">$products</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span> <span class="o">=</span> <span class="nb">array_values</span><span class="p">(</span><span class="nv">$products</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">rewind</span><span class="p">():</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">cursorPosition</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">current</span><span class="p">():</span> <span class="kt">Product</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">[</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">cursorPosition</span><span class="p">];</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">key</span><span class="p">():</span> <span class="kt">string</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">keys</span><span class="p">[</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">cursorPosition</span><span class="p">];</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">next</span><span class="p">():</span> <span class="kt">void</span>
+    <span class="p">{</span>
+        <span class="o">++</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">cursorPosition</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">valid</span><span class="p">():</span> <span class="kt">bool</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">isset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">[</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">cursorPosition</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>You can see that is a lot of code for something that does not provide yet anything better than <code class="language-plaintext highlighter-rouge">array</code>. Although this syntaxe may look the same accross any <code class="language-plaintext highlighter-rouge">Collection</code> it is actually a good way of implementing the PDO Generator technique. So do we avoid this much repeated code ?</p>
+
+<h3 id="the-easy-way-implementing-iteratoraggregate">The easy way (implementing <code class="language-plaintext highlighter-rouge">IteratorAggregate</code>)</h3>
+
+<p>Take a look at this class :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @implements IteratorAggregate&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">implements</span> <span class="nc">IteratorAggregate</span>
+<span class="p">{</span>
+    <span class="cd">/**
+      * @param array&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">private</span> <span class="k">readonly</span> <span class="kt">array</span> <span class="nv">$products</span>
+    <span class="p">)</span> <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="cd">/** @return ArrayIterator&lt;string, Product&gt; */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">getIterator</span><span class="p">():</span> <span class="kt">ArrayIterator</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nc">ArrayIterator</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Both of these example produce the same result : you can iterate over a <code class="language-plaintext highlighter-rouge">ProductCollection</code> instance like so :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$productCollection</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ProductCollection</span><span class="p">([</span>
+    <span class="s1">'#123'</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nc">Product</span><span class="p">(</span>
+        <span class="n">id</span><span class="o">:</span> <span class="s1">'#123'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">:</span> <span class="s1">'t-shirt'</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">]);</span>
+
+<span class="k">foreach</span> <span class="p">(</span><span class="nv">$productCollection</span> <span class="k">as</span> <span class="nv">$product</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">echo</span> <span class="nv">$product</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span> <span class="c1">// will print '#123'</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="but-what-do-i-gain">But what do I gain ?</h3>
+
+<p>First of all you now a typed collection that you can explicitly typehint anywhere. Your collection herself holds the information about iteration whereas with <code class="language-plaintext highlighter-rouge">array</code> you had to typehint using phpdoc everywhere what does this array contains.</p>
+
+<p>You also have access to a class so you can add any methods that you deemed usefull to this context.</p>
+
+<p>As of this moment you do not have any PHP memory improvements because we are still using an array in our class. Let’s improve this.</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cd">/** @implements IteratorAggregate&lt;string, Product&gt; */</span>
+<span class="kd">class</span> <span class="nc">ProductCollection</span> <span class="kd">implements</span> <span class="nc">IteratorAggregate</span>
+<span class="p">{</span>
+    <span class="cd">/**
+      * @param iterable&lt;string, Product&gt; $products
+      */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">private</span> <span class="k">readonly</span> <span class="kt">iterable</span> <span class="nv">$products</span>
+    <span class="p">)</span> <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="cd">/** @return Generator&lt;string, Product&gt; */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">getIterator</span><span class="p">():</span> <span class="kt">Generator</span>
+    <span class="p">{</span>
+        <span class="k">yield</span> <span class="n">from</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">products</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>⚠️ Beware that this might be a non rewindable generator meaning that you can iterate over <code class="language-plaintext highlighter-rouge">$this-&gt;products</code> only once.</p>
+
+<p>Now you can use it either with an object or an array. This object can be a generator (created using <code class="language-plaintext highlighter-rouge">yield</code>). Here is an example using doctrine that will iterate over every rows without loading all of them to memory at once :</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">ProductRepository</span> <span class="kd">extends</span> <span class="nc">ServiceEntityRepository</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="kt">ManagerRegistry</span> <span class="nv">$registry</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">parent</span><span class="o">::</span><span class="nf">__construct</span><span class="p">(</span><span class="nv">$registry</span><span class="p">,</span> <span class="nc">Product</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">streamAll</span><span class="p">():</span> <span class="kt">ProductCollection</span>
+    <span class="p">{</span>
+        <span class="nv">$qb</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createQueryBuilder</span><span class="p">(</span><span class="s1">'product'</span><span class="p">);</span>
+        
+        <span class="k">return</span> <span class="k">new</span> <span class="nc">ProductCollection</span><span class="p">(</span><span class="nv">$qb</span><span class="o">-&gt;</span><span class="nf">getQuery</span><span class="p">()</span><span class="o">-&gt;</span><span class="nf">toIterable</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>There are a lot more to say about <code class="language-plaintext highlighter-rouge">Iterator</code>’s. Depending on feedback on this post, I might go deeper in a follow-up article.</p>
+
+<hr />
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Using classes for what used to be provided by <code class="language-plaintext highlighter-rouge">array</code> allows you to :</p>
+
+<ul>
+  <li>more easily extend your code</li>
+  <li>keep business logic together</li>
+  <li>typehint precisely what you inject in a method or class</li>
+  <li>keep your static analysers happy !</li>
+</ul>
+
+
+  </div>
+</article>
+
+  </main>
+  <footer class="site-footer">
+    <p>&copy; 2026 Adrien Roches</p>
+  </footer>
+</body>
+</html>
