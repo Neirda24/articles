@@ -25,40 +25,151 @@
   <link rel="stylesheet" href="/articles/assets/css/syntax.css">
   <script src="/articles/assets/js/code-blocks.js" defer></script>
 </head>
-<body>
+<body class="page-home">
   <header class="site-header">
-    <a class="site-title" href="/articles/">Articles</a>
-    <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+    <div class="site-header-inner">
+      <a class="site-title" href="/articles/">Articles</a>
+      <p class="site-description">Notes techniques et retours d'expérience — Symfony, PHP, DevOps.</p>
+    </div>
   </header>
   <main class="site-content">
-    <ul class="post-list">
+    <div class="filter-bar">
+  <input type="search" class="filter-search" id="filter-search" placeholder="Rechercher un article…" aria-label="Rechercher un article">
+  <div class="filter-tags" id="filter-tags">
+    <button type="button" class="filter-tag is-active" data-tag="all">Tous</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="docker">docker</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="docker compose">docker compose</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="docker compose tips">docker compose tips</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="doctrine">doctrine</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="php">php</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="symfony">symfony</button>
+    
+    
+    
+    <button type="button" class="filter-tag" data-tag="tips">tips</button>
+    
+    
+  </div>
+</div>
+
+<ul class="post-grid" id="post-grid">
   
-  <li class="post-list-item">
-    <span class="post-list-date">2023-02-23</span>
-    <a href="/articles/2023/02/23/php-the-fall-of-array/">PHP : The fall of `array`</a>
+  <li class="post-card" data-title="php : the fall of `array`" data-tags="php,tips,doctrine" data-excerpt="array is a very common type in php but is often overused.
+i’ll try to explain why you don’t (almost) need to type hint array anymore !
+">
+    <span class="post-card-date">2023-02-23</span>
+    <h2 class="post-card-title"><a href="/articles/2023/02/23/php-the-fall-of-array/">PHP : The fall of `array`</a></h2>
+    <p class="post-card-excerpt">array is a very common type in PHP but is often overused.
+I’ll try to explain why you don’t (almost) need to type hint array anymore !
+</p>
+    
+    <div class="post-card-tags">
+      
+      <a class="tag-chip" href="/articles/?tag=php" data-tag="php">php</a>
+      
+      <a class="tag-chip" href="/articles/?tag=tips" data-tag="tips">tips</a>
+      
+      <a class="tag-chip" href="/articles/?tag=doctrine" data-tag="doctrine">doctrine</a>
+      
+    </div>
+    
   </li>
   
-  <li class="post-list-item">
-    <span class="post-list-date">2023-02-02</span>
-    <a href="/articles/2023/02/02/php-array_reduce/">PHP : nested use of array_* is a disguised array_reduce</a>
+  <li class="post-card" data-title="php : nested use of array_* is a disguised array_reduce" data-tags="php,tips" data-excerpt="i feel like in javascript you see a lot of [...].reduce() but not so much in php. it may be a shame not to use it because it can help you write more readable code and with less iterations.
+">
+    <span class="post-card-date">2023-02-02</span>
+    <h2 class="post-card-title"><a href="/articles/2023/02/02/php-array_reduce/">PHP : nested use of array_* is a disguised array_reduce</a></h2>
+    <p class="post-card-excerpt">I feel like in javascript you see a lot of [...].reduce() but not so much in PHP. It may be a shame not to use it because it can help you...</p>
+    
+    <div class="post-card-tags">
+      
+      <a class="tag-chip" href="/articles/?tag=php" data-tag="php">php</a>
+      
+      <a class="tag-chip" href="/articles/?tag=tips" data-tag="tips">tips</a>
+      
+    </div>
+    
   </li>
   
-  <li class="post-list-item">
-    <span class="post-list-date">2023-01-24</span>
-    <a href="/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/">Symfony : why I stopped using the AbstractController</a>
+  <li class="post-card" data-title="symfony : why i stopped using the abstractcontroller" data-tags="symfony,php" data-excerpt="a typical controller in symfony may look like this :
+">
+    <span class="post-card-date">2023-01-24</span>
+    <h2 class="post-card-title"><a href="/articles/2023/01/24/symfony-why-i-stopped-using-the-abstractcontroller/">Symfony : why I stopped using the AbstractController</a></h2>
+    <p class="post-card-excerpt">A typical Controller in Symfony may look like this :
+</p>
+    
+    <div class="post-card-tags">
+      
+      <a class="tag-chip" href="/articles/?tag=symfony" data-tag="symfony">symfony</a>
+      
+      <a class="tag-chip" href="/articles/?tag=php" data-tag="php">php</a>
+      
+    </div>
+    
   </li>
   
-  <li class="post-list-item">
-    <span class="post-list-date">2022-10-10</span>
-    <a href="/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/">Seamless usage of docker in any apps</a>
+  <li class="post-card" data-title="seamless usage of docker in any apps" data-tags="docker,php,symfony,tips" data-excerpt="one of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. let’s see how we can ease things.
+">
+    <span class="post-card-date">2022-10-10</span>
+    <h2 class="post-card-title"><a href="/articles/2022/10/10/seamless-usage-of-docker-in-any-apps/">Seamless usage of docker in any apps</a></h2>
+    <p class="post-card-excerpt">One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual too...</p>
+    
+    <div class="post-card-tags">
+      
+      <a class="tag-chip" href="/articles/?tag=docker" data-tag="docker">docker</a>
+      
+      <a class="tag-chip" href="/articles/?tag=php" data-tag="php">php</a>
+      
+      <a class="tag-chip" href="/articles/?tag=symfony" data-tag="symfony">symfony</a>
+      
+      <a class="tag-chip" href="/articles/?tag=tips" data-tag="tips">tips</a>
+      
+    </div>
+    
   </li>
   
-  <li class="post-list-item">
-    <span class="post-list-date">2022-10-02</span>
-    <a href="/articles/2022/10/02/docker-compose-tips-1/">Docker Compose - a few tips #1</a>
+  <li class="post-card" data-title="docker compose - a few tips #1" data-tags="docker compose,docker compose tips,docker,tips" data-excerpt="when following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum (fewer files as possible, fewer lines of code, …). the drawbacks are it does not teach us the best way to do things. how to keep things readable, maintainable, flexible, …
+">
+    <span class="post-card-date">2022-10-02</span>
+    <h2 class="post-card-title"><a href="/articles/2022/10/02/docker-compose-tips-1/">Docker Compose - a few tips #1</a></h2>
+    <p class="post-card-excerpt">When following tutorials or hello-world, you will always end up with simple knowledge on how to do the basic stuff with a strict minimum ...</p>
+    
+    <div class="post-card-tags">
+      
+      <a class="tag-chip" href="/articles/?tag=docker+compose" data-tag="docker compose">docker compose</a>
+      
+      <a class="tag-chip" href="/articles/?tag=docker+compose+tips" data-tag="docker compose tips">docker compose tips</a>
+      
+      <a class="tag-chip" href="/articles/?tag=docker" data-tag="docker">docker</a>
+      
+      <a class="tag-chip" href="/articles/?tag=tips" data-tag="tips">tips</a>
+      
+    </div>
+    
   </li>
   
 </ul>
+<p class="filter-empty" id="filter-empty">Aucun article ne correspond à ta recherche.</p>
+
+<script src="/articles/assets/js/filter.js" defer></script>
 
   </main>
   <footer class="site-footer">
