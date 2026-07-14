@@ -134,41 +134,106 @@
   </tbody>
 </table>
 
-<p>Now I’ll present what I’ve been using for 5+ years now. Here is the script first, then I’ll explain. (<a href="https://gist.github.com/Neirda24/32c400034a355edfa0c860af62edd7f4">sources</a>).</p>
+<p>Now I’ll present what I’ve been using for 5+ years now, boiled down to its essence for docker / PHP / Symfony users. Here is the script first, then I’ll explain.</p>
 
-<figure class="post-figure post-figure--center">
-  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/base_functions.sh.png" alt="functions.sh" loading="lazy" />
-  <figcaption>functions.sh</figcaption>
-</figure>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+
+<span class="c">## ---------------</span>
+<span class="c">## Setup</span>
+<span class="c">## ---------------</span>
+<span class="nv">CURRENT_BASH</span><span class="o">=</span><span class="si">$(</span>ps <span class="nt">-p</span> <span class="nv">$$</span> | <span class="nb">tail</span> <span class="nt">-n</span> 1 | <span class="nb">awk</span> <span class="s1">'{ print $4 }'</span> | perl <span class="nt">-pe</span> <span class="s1">'s#.*[-/](\w)#$1#'</span><span class="si">)</span><span class="p">;</span>
+<span class="k">case</span> <span class="s2">"</span><span class="k">${</span><span class="nv">CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span> <span class="k">in
+</span>zsh<span class="p">)</span>
+    <span class="nv">CURRENT_DIR</span><span class="o">=</span><span class="si">$(</span><span class="nb">cd</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">dirname</span> <span class="s2">"</span><span class="k">${</span><span class="nv">0</span><span class="k">}</span><span class="s2">"</span><span class="si">)</span><span class="s2">"</span> <span class="o">&amp;&amp;</span> <span class="nb">pwd</span><span class="si">)</span><span class="p">;</span>
+    <span class="p">;;</span>
+bash<span class="p">)</span>
+    <span class="nv">CURRENT_DIR</span><span class="o">=</span><span class="si">$(</span><span class="nb">cd</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">dirname</span> <span class="s2">"</span><span class="k">${</span><span class="nv">BASH_SOURCE</span><span class="p">[0]</span><span class="k">}</span><span class="s2">"</span><span class="si">)</span><span class="s2">"</span> <span class="o">&amp;&amp;</span> <span class="nb">pwd</span><span class="si">)</span><span class="p">;</span>
+    <span class="p">;;</span>
+<span class="k">*</span><span class="p">)</span>
+    <span class="nv">COLOR_RED</span><span class="o">=</span><span class="s1">'\033[0;31m'</span><span class="p">;</span>
+    <span class="nv">RESET_COLOR</span><span class="o">=</span><span class="s1">'\033[0m'</span>
+    <span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\n</span><span class="k">${</span><span class="nv">COLOR_RED</span><span class="k">}</span><span class="se">\`</span><span class="k">${</span><span class="nv">CURRENT_BASH</span><span class="k">}</span><span class="se">\`</span><span class="s2"> does not seem to be supported</span><span class="k">${</span><span class="nv">RESET_COLOR</span><span class="k">}</span><span class="se">\n</span><span class="s2">"</span> 1&gt;&amp;2<span class="p">;</span>
+    <span class="k">return </span>1<span class="p">;</span>
+    <span class="p">;;</span>
+<span class="k">esac</span>
+
+<span class="nb">source</span> <span class="s2">"</span><span class="k">${</span><span class="nv">CURRENT_DIR</span><span class="k">}</span><span class="s2">/.env"</span><span class="p">;</span>
+
+<span class="nb">unalias </span>__getSubPath 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+__getSubPath<span class="o">()</span> <span class="o">{</span>
+    <span class="nb">local </span><span class="nv">absolute_subpath</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">PWD</span><span class="k">}</span><span class="s2">/"</span><span class="p">;</span>
+    <span class="nb">local </span><span class="nv">subpath</span><span class="o">=</span><span class="s2">""</span><span class="p">;</span>
+    <span class="k">if</span> <span class="o">[[</span> <span class="s2">"</span><span class="k">${</span><span class="nv">absolute_subpath</span><span class="k">}</span><span class="s2">"</span> <span class="o">==</span> <span class="s2">"</span><span class="k">${</span><span class="nv">APP_PROJECT_PATH</span>:?<span class="k">}</span><span class="s2">/"</span><span class="k">*</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+        </span><span class="nv">subpath</span><span class="o">=</span><span class="k">${</span><span class="nv">absolute_subpath</span><span class="p">#</span><span class="s2">"</span><span class="k">${</span><span class="nv">APP_PROJECT_PATH</span>:?<span class="k">}</span><span class="s2">/"</span><span class="k">}</span><span class="p">;</span>
+    <span class="k">fi
+    </span><span class="nb">echo</span> <span class="s2">"</span><span class="k">${</span><span class="nv">subpath</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+<span class="o">}</span>
+
+<span class="nb">unalias </span>__docker_exec 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+__docker_exec<span class="o">()</span> <span class="o">{</span>
+    <span class="nb">local </span>subpath<span class="p">;</span> <span class="nv">subpath</span><span class="o">=</span><span class="si">$(</span>__getSubPath<span class="si">)</span><span class="p">;</span>
+    <span class="nb">local </span><span class="nv">containerName</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">1</span>:?<span class="k">}</span><span class="s2">"</span><span class="p">;</span> <span class="nb">shift</span><span class="p">;</span>
+    <span class="nb">local </span>isTty<span class="p">;</span> <span class="nv">isTty</span><span class="o">=</span><span class="si">$(</span><span class="nb">tty</span> &amp;&gt; /dev/null <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s1">'t'</span> <span class="o">||</span> <span class="nb">echo</span> <span class="s1">''</span><span class="si">)</span><span class="p">;</span>
+    docker <span class="nb">exec</span> <span class="nt">-i</span><span class="s2">"</span><span class="k">${</span><span class="nv">isTty</span><span class="k">}</span><span class="s2">"</span> <span class="nt">-w</span> <span class="s2">"/var/www/html/</span><span class="k">${</span><span class="nv">subpath</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">COMPOSE_PROJECT_NAME</span>:?<span class="k">}</span><span class="s2">-</span><span class="k">${</span><span class="nv">containerName</span><span class="k">}</span><span class="s2">-1"</span> <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span>
+<span class="o">}</span>
+<span class="nb">export</span> <span class="nt">-f</span> __docker_exec<span class="p">;</span>
+
+<span class="c">## ---------------</span>
+<span class="c">## Alias factory</span>
+<span class="c">## ---------------</span>
+__define_docker_alias<span class="o">()</span> <span class="o">{</span>
+    <span class="nb">local </span><span class="nv">name</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">1</span>:?<span class="k">}</span><span class="s2">"</span> <span class="nv">container</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">2</span>:?<span class="k">}</span><span class="s2">"</span> <span class="nv">cmd</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">3</span><span class="k">:-</span><span class="nv">$1</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="nb">unalias</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="nb">eval</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">() { __docker_exec '</span><span class="k">${</span><span class="nv">container</span><span class="k">}</span><span class="s2">' '</span><span class="k">${</span><span class="nv">cmd</span><span class="k">}</span><span class="s2">' </span><span class="se">\"\$</span><span class="s2">@</span><span class="se">\"</span><span class="s2">; }"</span><span class="p">;</span>
+    <span class="nb">export</span> <span class="nt">-f</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+<span class="o">}</span>
+
+<span class="c">## ---------------</span>
+<span class="c">## PHP &amp; Symfony</span>
+<span class="c">## ---------------</span>
+__define_docker_alias php php
+__define_docker_alias composer tools
+__define_docker_alias symfony tools
+
+<span class="nb">unalias </span>console 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+console<span class="o">()</span> <span class="o">{</span> php bin/console <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
+<span class="nb">export</span> <span class="nt">-f</span> console<span class="p">;</span>
+
+<span class="nb">unalias </span>dev 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+dev<span class="o">()</span> <span class="o">{</span> console <span class="nt">--env</span><span class="o">=</span>dev <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
+<span class="nb">export</span> <span class="nt">-f</span> dev<span class="p">;</span>
+
+<span class="nb">unalias </span>prod 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+prod<span class="o">()</span> <span class="o">{</span> console <span class="nt">--env</span><span class="o">=</span>prod <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
+<span class="nb">export</span> <span class="nt">-f</span> prod<span class="p">;</span>
+</code></pre></div></div>
 
 <h2 id="how-does-it-works">How does it work?</h2>
 
-<figure class="post-figure post-figure--center">
-  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/current_bash-1.png" alt="Guessing the current bash" loading="lazy" />
-  <figcaption>Guessing the current bash</figcaption>
-</figure>
-
-<p>This is the tricky part that does the heavy magic. Basically we try to guess the current directory the <code class="language-plaintext highlighter-rouge">functions.sh</code> file is in. But because it’s a shell script, we have to guess using different methods depending on the shell of your choosing. Here I “support” only <code class="language-plaintext highlighter-rouge">bash</code> and <code class="language-plaintext highlighter-rouge">zsh</code>.</p>
+<p>This is the tricky part that does the heavy magic. Basically we try to guess the current directory the <code class="language-plaintext highlighter-rouge">functions.sh</code> file is in. But because it’s a shell script, we have to guess using different methods depending on the shell of your choosing. Here I “support” only <code class="language-plaintext highlighter-rouge">bash</code> and <code class="language-plaintext highlighter-rouge">zsh</code>, and fail loudly on anything else instead of silently misbehaving.</p>
 
 <p>This script should work on any Mac / Ubuntu based distribution.</p>
 
-<figure class="post-figure post-figure--center">
-  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/path_helpers-1.png" alt="Path helpers" loading="lazy" />
-  <figcaption>Path helpers</figcaption>
-</figure>
+<p>Firstly I assume that you have a <code class="language-plaintext highlighter-rouge">.env</code> in the same directory as the <code class="language-plaintext highlighter-rouge">functions.sh</code> file — the very same one docker compose itself reads (see <a href="https://docs.docker.com/compose/env-file/">https://docs.docker.com/compose/env-file/</a>). Two variables matter here:</p>
 
-<p>Firstly I assume that you have a <code class="language-plaintext highlighter-rouge">.env</code> in the same directory as the <code class="language-plaintext highlighter-rouge">functions.sh</code> file. Usually it is the same as the docker compose one (see <a href="https://docs.docker.com/compose/env-file/">https://docs.docker.com/compose/env-file/</a>).</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># .env</span>
+<span class="nv">COMPOSE_PROJECT_NAME</span><span class="o">=</span>myapp
+<span class="nv">APP_PROJECT_PATH</span><span class="o">=</span>/absolute/path/to/myapp
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">COMPOSE_PROJECT_NAME</code> isn’t specific to this script: it’s the standard docker compose variable that prefixes your containers, networks and volumes. Reusing it here means container names stay predictable (<code class="language-plaintext highlighter-rouge">${COMPOSE_PROJECT_NAME}-&lt;service&gt;-1</code>) without duplicating any configuration. <code class="language-plaintext highlighter-rouge">APP_PROJECT_PATH</code>, on the other hand, is specific to <code class="language-plaintext highlighter-rouge">functions.sh</code>: it must be the absolute path to your project root, since it’s what <code class="language-plaintext highlighter-rouge">__getSubPath</code> compares your current directory against.</p>
 
 <p>The <code class="language-plaintext highlighter-rouge">__getSubPath</code> function is to detect if you are in a subdirectory of the <code class="language-plaintext highlighter-rouge">APP_PROJECT_PATH</code>. If so we use the relative subdirectory, empty otherwise.</p>
 
-<p>The <code class="language-plaintext highlighter-rouge">__docker_exec</code> function is to facilitate the use of the previous function and the working directory (here I assume <code class="language-plaintext highlighter-rouge">/var/www/html</code>).</p>
+<p>The <code class="language-plaintext highlighter-rouge">__docker_exec</code> function is to facilitate the use of the previous function and the working directory (here I assume <code class="language-plaintext highlighter-rouge">/var/www/html</code>). It also checks whether you’re in an interactive terminal (<code class="language-plaintext highlighter-rouge">tty</code>) to pick <code class="language-plaintext highlighter-rouge">-i</code> or <code class="language-plaintext highlighter-rouge">-it</code> — so the same alias works both from your shell and from non-interactive contexts like a script or CI.</p>
 
-<figure class="post-figure post-figure--center">
-  <img src="/articles/assets/img/seamless-usage-of-docker-in-any-apps/function_php-1.png" alt="The PHP function" loading="lazy" />
-  <figcaption>The PHP function</figcaption>
-</figure>
+<p>Finally we declare the aliases we want, through a small factory instead of repeating the same four lines for every tool. First we make sure that nothing prevents us from declaring the function by running <code class="language-plaintext highlighter-rouge">unalias</code>. Then <code class="language-plaintext highlighter-rouge">__define_docker_alias</code> declares a function which is what you would type (almost) if you were not using any wrapper of some sort, and accepts an infinite number of parameters thanks to <code class="language-plaintext highlighter-rouge">"$@"</code>. Finally we make it globally available with <code class="language-plaintext highlighter-rouge">export -f</code>.</p>
 
-<p>Finally we declare the alias we want. This is the simple part. First we make sure that nothing prevents us from declaring a php function by running the unalias. Then we declare the php which is what you would type (almost) if you were not using any wrapper of some sort. Except that we accept an infinite number of parameters thanks to <code class="language-plaintext highlighter-rouge">$*</code>. Finally we make it globally available.</p>
+<p>Need <code class="language-plaintext highlighter-rouge">phpunit</code>, <code class="language-plaintext highlighter-rouge">yarn</code>, or any other tool you run through docker compose? Add one line:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>__define_docker_alias phpunit tools <span class="s2">"php -dmemory_limit=-1 ./vendor/bin/phpunit"</span>
+__define_docker_alias yarn node
+</code></pre></div></div>
 
 <h2 id="how-to-use-it">How to use it?</h2>
 
@@ -186,7 +251,7 @@
 <p>is equivalent to</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp
-<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/'</span> myapp_php bash <span class="nt">-c</span> <span class="s2">"php --version"</span><span class="p">;</span>
+<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/'</span> myapp-php-1 php <span class="nt">--version</span><span class="p">;</span>
 </code></pre></div></div>
 
 <p>and</p>
@@ -198,7 +263,7 @@
 <p>is equivalent to</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp/src/Bundle/SomeBundle
-<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/src/Bundle/SomeBundle'</span> myapp_php bash <span class="nt">-c</span> <span class="s2">"php --version"</span><span class="p">;</span>
+<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/src/Bundle/SomeBundle'</span> myapp-php-1 php <span class="nt">--version</span><span class="p">;</span>
 </code></pre></div></div>
 
 <p>It will be running inside the container itself so you won’t have to think about it anymore.</p>
@@ -211,7 +276,6 @@
   <li>Auto source / unsource when entering the project directory. I tried <a href="https://github.com/alecthomas/ondir">ondir</a> but it is not well maintained, so I didn’t stick with it.</li>
   <li>When running <code class="language-plaintext highlighter-rouge">$ php &lt;TAB&gt;&lt;TAB&gt;</code> it will use your host autocomplete instead of the container one.</li>
 </ol>
-
 
   </div>
 </article>
