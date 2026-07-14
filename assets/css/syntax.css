@@ -1,0 +1,66 @@
+.highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+
+.highlight, .highlight .w {
+  color: var(--code-fg);
+  background-color: var(--code-bg);
+}
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt, .highlight .kv {
+  color: var(--syn-keyword);
+}
+.highlight .gr {
+  color: var(--code-bg);
+}
+.highlight .gd {
+  color: var(--syn-delete-fg);
+  background-color: var(--syn-delete-bg);
+}
+.highlight .nb, .highlight .nc, .highlight .no, .highlight .nn {
+  color: var(--syn-entity);
+}
+.highlight .sr, .highlight .na, .highlight .nt {
+  color: var(--syn-tag);
+}
+.highlight .gi {
+  color: var(--syn-tag);
+  background-color: var(--syn-insert-bg);
+}
+.highlight .ges {
+  font-weight: bold;
+  font-style: italic;
+}
+.highlight .kc, .highlight .l, .highlight .ld, .highlight .m, .highlight .mb, .highlight .mf,
+.highlight .mh, .highlight .mi, .highlight .il, .highlight .mo, .highlight .mx,
+.highlight .sb, .highlight .bp, .highlight .ne, .highlight .nl, .highlight .py,
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi, .highlight .vm,
+.highlight .o, .highlight .ow {
+  color: var(--syn-constant);
+}
+.highlight .gh, .highlight .gu {
+  color: var(--syn-constant);
+  font-weight: bold;
+}
+.highlight .s, .highlight .sa, .highlight .sc, .highlight .dl, .highlight .sd, .highlight .s2,
+.highlight .se, .highlight .sh, .highlight .sx, .highlight .s1, .highlight .ss {
+  color: var(--syn-string);
+}
+.highlight .nd, .highlight .nf, .highlight .fm {
+  color: var(--syn-function);
+}
+.highlight .err {
+  color: inherit;
+  background-color: transparent;
+}
+.highlight .c, .highlight .ch, .highlight .cd, .highlight .cm, .highlight .cp, .highlight .cpf,
+.highlight .c1, .highlight .cs, .highlight .gl, .highlight .gt {
+  color: var(--syn-comment);
+}
+.highlight .ni, .highlight .si, .highlight .ge, .highlight .gs {
+  color: var(--code-fg);
+}
+.highlight .ge {
+  font-style: italic;
+}
+.highlight .gs {
+  font-weight: bold;
+}
