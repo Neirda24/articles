@@ -239,6 +239,15 @@ __export_fn dev<span class="p">;</span>
 <span class="nb">unalias </span>prod 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 prod<span class="o">()</span> <span class="o">{</span> console <span class="nt">--env</span><span class="o">=</span>prod <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
 __export_fn prod<span class="p">;</span>
+
+<span class="c">## ---------------</span>
+<span class="c">## Teardown</span>
+<span class="c">## ---------------</span>
+<span class="nb">unalias </span>unsource 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+unsource<span class="o">()</span> <span class="o">{</span>
+    <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+<span class="o">}</span>
+__export_fn unsource<span class="p">;</span>
 </code></pre></div></div>
 
 <h2 id="how-does-it-works">How does it work?</h2>
@@ -310,6 +319,18 @@ __export_fn phpunit<span class="p">;</span>
 </code></pre></div></div>
 
 <p>It will be running inside the container itself so you won’t have to think about it anymore.</p>
+
+<h3 id="getting-your-shell-back">Getting your shell back</h3>
+
+<p>Sourcing a file is a one-way operation: there’s no built-in “unsource”. Undoing it by hand would mean <code class="language-plaintext highlighter-rouge">unset -f</code> on every function declared above (plus the variables, plus the completions registered by <code class="language-plaintext highlighter-rouge">__load_completion</code>) - tedious, and easy to get out of sync the day you add a new alias. <code class="language-plaintext highlighter-rouge">unsource</code> sidesteps the whole bookkeeping problem:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp
+<span class="nv">$ </span>unsource<span class="p">;</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">exec "${_FUNCTIONS_CURRENT_BASH}"</code> replaces the current shell process with a brand new one of the same kind - <code class="language-plaintext highlighter-rouge">bash</code> or <code class="language-plaintext highlighter-rouge">zsh</code>, whichever was detected at the top of the script. Nothing to enumerate, nothing to keep in sync: the process that held all those definitions is simply gone, and <code class="language-plaintext highlighter-rouge">php --version</code> talks to your host again.</p>
+
+<p>The trade-off is that it’s a blunt instrument, and worth knowing before you reach for it. Since it’s a fresh process, everything else session-local goes with the functions: shell variables you exported by hand, <code class="language-plaintext highlighter-rouge">cd</code> history, background jobs. Your working directory survives (the new shell inherits it), and so does anything set by your rc files, since the replacement shell reads them again on startup - which also means <code class="language-plaintext highlighter-rouge">unsource</code> is <em>not</em> the right tool if you sourced <code class="language-plaintext highlighter-rouge">functions.sh</code> from your <code class="language-plaintext highlighter-rouge">.bashrc</code>/<code class="language-plaintext highlighter-rouge">.zshrc</code>, as the new shell would immediately source it back.</p>
 
 <h2 id="container-autocomplete">Bonus: container autocomplete</h2>
 
