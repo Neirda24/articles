@@ -59,6 +59,30 @@
   <div class="post-content">
     <p>One of the barriers to using docker these days for some developers is the burden to interact with it daily instead of using the usual tools directly. Let’s see how we can ease things.</p>
 
+<h2 id="tldr">TL;DR</h2>
+
+<p>Instead of this:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-w</span> <span class="s1">'/var/www/html/src/Bundle/SomeBundle'</span> myapp-php-1 php <span class="nt">--version</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>just this:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>php <span class="nt">--version</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>A single per-project <code class="language-plaintext highlighter-rouge">functions.sh</code> that you <code class="language-plaintext highlighter-rouge">source</code> into your shell. It reads the <code class="language-plaintext highlighter-rouge">.env</code> docker
+compose already uses, then redefines <code class="language-plaintext highlighter-rouge">php</code>, <code class="language-plaintext highlighter-rouge">composer</code>, <code class="language-plaintext highlighter-rouge">console</code> &amp; co. as shell functions
+forwarding to <code class="language-plaintext highlighter-rouge">docker exec</code> - right container, right working directory, all your arguments.</p>
+
+<p><code class="language-plaintext highlighter-rouge">&lt;TAB&gt;</code> completion keeps working, and answers from <em>inside</em> the container. <code class="language-plaintext highlighter-rouge">unsource</code> undoes
+everything when you’re done, without restarting your shell.</p>
+
+<p>No Makefile, no <code class="language-plaintext highlighter-rouge">docker compose exec</code> to keep in your muscle memory.</p>
+
+<p>Everything below is the <em>why</em> behind each line of that script - jump straight to
+<a href="#whats-this-about">the script</a> if you’d rather read code first.</p>
+
 <h2 id="table-of-contents">Table of Contents</h2>
 
 <ol>
