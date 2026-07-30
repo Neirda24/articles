@@ -158,11 +158,16 @@ bash<span class="p">)</span>
     <span class="p">;;</span>
 <span class="k">esac</span>
 
+<span class="nv">_FUNCTIONS_ENV_VARS</span><span class="o">=(</span><span class="si">$(</span><span class="nb">grep</span> <span class="nt">-oE</span> <span class="s1">'^[A-Za-z_][A-Za-z0-9_]*'</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_DIR</span><span class="k">}</span><span class="s2">/.env"</span><span class="si">)</span><span class="o">)</span><span class="p">;</span>
 <span class="nb">source</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_DIR</span><span class="k">}</span><span class="s2">/.env"</span><span class="p">;</span>
 
-<span class="nb">unalias </span>__export_fn 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
-__export_fn<span class="o">()</span> <span class="o">{</span>
+<span class="nv">_FUNCTIONS_DECLARED</span><span class="o">=()</span><span class="p">;</span>
+
+<span class="nb">unalias </span>__declare_fn 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
+__declare_fn<span class="o">()</span> <span class="o">{</span>
+    _FUNCTIONS_DECLARED+<span class="o">=(</span><span class="s2">"</span><span class="k">${</span><span class="nv">1</span>:?<span class="k">}</span><span class="s2">"</span><span class="o">)</span><span class="p">;</span>
     <span class="o">[[</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span> <span class="o">==</span> <span class="s1">'bash'</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> <span class="nb">export</span> <span class="nt">-f</span> <span class="s2">"</span><span class="k">${</span><span class="nv">1</span>:?<span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="k">return </span>0<span class="p">;</span>
 <span class="o">}</span>
 
 <span class="nb">unalias </span>__getSubPath 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
@@ -188,7 +193,7 @@ __docker_exec<span class="o">()</span> <span class="o">{</span>
 
     docker <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">compEnv</span><span class="p">[@]</span><span class="k">}</span><span class="s2">"</span> <span class="nt">-i</span><span class="s2">"</span><span class="k">${</span><span class="nv">isTty</span><span class="k">}</span><span class="s2">"</span> <span class="nt">-w</span> <span class="s2">"/var/www/html/</span><span class="k">${</span><span class="nv">subpath</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">COMPOSE_PROJECT_NAME</span>:?<span class="k">}</span><span class="s2">-</span><span class="k">${</span><span class="nv">containerName</span><span class="k">}</span><span class="s2">-1"</span> <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span>
 <span class="o">}</span>
-__export_fn __docker_exec<span class="p">;</span>
+__declare_fn __docker_exec<span class="p">;</span>
 
 <span class="nb">unalias </span>__load_completion 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 __load_completion<span class="o">()</span> <span class="o">{</span>
@@ -204,7 +209,7 @@ __load_completion<span class="o">()</span> <span class="o">{</span>
         </span><span class="nv">out</span><span class="o">=</span><span class="si">$(</span><span class="s2">"</span><span class="k">${</span><span class="nv">cmd</span><span class="k">}</span><span class="s2">"</span> completion zsh 2&gt;/dev/null<span class="si">)</span> <span class="o">&amp;&amp;</span> <span class="nb">eval</span> <span class="s2">"</span><span class="k">${</span><span class="nv">out</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
     <span class="k">fi</span>
 <span class="o">}</span>
-__export_fn __load_completion<span class="p">;</span>
+__declare_fn __load_completion<span class="p">;</span>
 
 <span class="c">## ---------------</span>
 <span class="c">## Alias factory</span>
@@ -213,7 +218,7 @@ __define_docker_alias<span class="o">()</span> <span class="o">{</span>
     <span class="nb">local </span><span class="nv">name</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">1</span>:?<span class="k">}</span><span class="s2">"</span> <span class="nv">container</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">2</span>:?<span class="k">}</span><span class="s2">"</span> <span class="nv">cmd</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">3</span><span class="k">:-</span><span class="nv">$1</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
     <span class="nb">unalias</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
     <span class="nb">eval</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">() { __docker_exec '</span><span class="k">${</span><span class="nv">container</span><span class="k">}</span><span class="s2">' '</span><span class="k">${</span><span class="nv">cmd</span><span class="k">}</span><span class="s2">' </span><span class="se">\"\$</span><span class="s2">@</span><span class="se">\"</span><span class="s2">; }"</span><span class="p">;</span>
-    __export_fn <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    __declare_fn <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
 <span class="o">}</span>
 
 <span class="c">## ---------------</span>
@@ -229,25 +234,42 @@ __load_completion symfony<span class="p">;</span>
 
 <span class="nb">unalias </span>console 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 console<span class="o">()</span> <span class="o">{</span> php bin/console <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
-__export_fn console<span class="p">;</span>
+__declare_fn console<span class="p">;</span>
 __load_completion console<span class="p">;</span>
 
 <span class="nb">unalias </span>dev 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 dev<span class="o">()</span> <span class="o">{</span> console <span class="nt">--env</span><span class="o">=</span>dev <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
-__export_fn dev<span class="p">;</span>
+__declare_fn dev<span class="p">;</span>
 
 <span class="nb">unalias </span>prod 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 prod<span class="o">()</span> <span class="o">{</span> console <span class="nt">--env</span><span class="o">=</span>prod <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
-__export_fn prod<span class="p">;</span>
+__declare_fn prod<span class="p">;</span>
 
 <span class="c">## ---------------</span>
 <span class="c">## Teardown</span>
 <span class="c">## ---------------</span>
 <span class="nb">unalias </span>unsource 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 unsource<span class="o">()</span> <span class="o">{</span>
-    <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="nb">local </span>name<span class="p">;</span>
+    <span class="nb">local </span><span class="nv">shell</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="nb">local </span><span class="nv">hard</span><span class="o">=</span><span class="s1">''</span><span class="p">;</span> <span class="o">[[</span> <span class="s2">"</span><span class="k">${</span><span class="nv">1</span><span class="k">:-}</span><span class="s2">"</span> <span class="o">==</span> <span class="s1">'--hard'</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> <span class="nv">hard</span><span class="o">=</span><span class="s1">'1'</span><span class="p">;</span>
+
+    <span class="k">for </span>name <span class="k">in</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_DECLARED</span><span class="p">[@]</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span> <span class="k">do
+        if</span> <span class="o">[[</span> <span class="s2">"</span><span class="k">${</span><span class="nv">shell</span><span class="k">}</span><span class="s2">"</span> <span class="o">==</span> <span class="s1">'bash'</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+            </span><span class="nb">complete</span> <span class="nt">-r</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null<span class="p">;</span>
+        <span class="k">else
+            </span>compdef <span class="nt">-d</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null<span class="p">;</span>
+        <span class="k">fi
+        </span><span class="nb">unset</span> <span class="nt">-f</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null<span class="p">;</span>
+    <span class="k">done
+    </span><span class="nb">unset</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_ENV_VARS</span><span class="p">[@]</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="nb">unset</span> <span class="nt">-f</span> __getSubPath __define_docker_alias __declare_fn<span class="p">;</span>
+    <span class="nb">unset </span>_FUNCTIONS_DECLARED _FUNCTIONS_ENV_VARS _FUNCTIONS_CURRENT_BASH _FUNCTIONS_CURRENT_DIR<span class="p">;</span>
+
+    <span class="o">[[</span> <span class="nt">-n</span> <span class="s2">"</span><span class="k">${</span><span class="nv">hard</span><span class="k">}</span><span class="s2">"</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">shell</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="k">return </span>0<span class="p">;</span>
 <span class="o">}</span>
-__export_fn unsource<span class="p">;</span>
+__declare_fn unsource<span class="p">;</span>
 </code></pre></div></div>
 
 <h2 id="how-does-it-works">How does it work?</h2>
@@ -267,13 +289,15 @@ __export_fn unsource<span class="p">;</span>
 
 <p><code class="language-plaintext highlighter-rouge">COMPOSE_PROJECT_NAME</code> isn’t specific to this script: it’s the standard docker compose variable that prefixes your containers, networks and volumes. Reusing it here means container names stay predictable (<code class="language-plaintext highlighter-rouge">${COMPOSE_PROJECT_NAME}-&lt;service&gt;-1</code>) without duplicating any configuration. <code class="language-plaintext highlighter-rouge">APP_PROJECT_PATH</code>, on the other hand, is specific to <code class="language-plaintext highlighter-rouge">functions.sh</code>: it must be the absolute path to your project root, since it’s what <code class="language-plaintext highlighter-rouge">__getSubPath</code> compares your current directory against.</p>
 
-<p><code class="language-plaintext highlighter-rouge">__export_fn</code> is a small guard around <code class="language-plaintext highlighter-rouge">export -f</code>: bash exports functions to child processes through the environment (<code class="language-plaintext highlighter-rouge">BASH_FUNC_*</code>), but zsh has no equivalent mechanism - <code class="language-plaintext highlighter-rouge">export -f</code> there doesn’t fail, it just prints the function’s source to stdout as a side effect of <code class="language-plaintext highlighter-rouge">typeset -f</code>’s display mode, which would spam every terminal you open. <code class="language-plaintext highlighter-rouge">__export_fn</code> skips the call entirely outside bash, so every other place in the script that needs to export a function calls it instead of <code class="language-plaintext highlighter-rouge">export -f</code> directly.</p>
+<p><code class="language-plaintext highlighter-rouge">__declare_fn</code> does two things, and every single function the script defines goes through it. First, it’s a guard around <code class="language-plaintext highlighter-rouge">export -f</code>: bash exports functions to child processes through the environment (<code class="language-plaintext highlighter-rouge">BASH_FUNC_*</code>), but zsh has no equivalent mechanism - <code class="language-plaintext highlighter-rouge">export -f</code> there doesn’t fail, it just prints the function’s source to stdout as a side effect of <code class="language-plaintext highlighter-rouge">typeset -f</code>’s display mode, which would spam every terminal you open. <code class="language-plaintext highlighter-rouge">__declare_fn</code> skips the call entirely outside bash, so every other place in the script that needs to export a function calls it instead of <code class="language-plaintext highlighter-rouge">export -f</code> directly. Second, it records the name in <code class="language-plaintext highlighter-rouge">_FUNCTIONS_DECLARED</code> - that registry is what makes <a href="#getting-your-shell-back">tearing everything down</a> possible later, and it costs one line here because this function is already the mandatory choke point.</p>
+
+<p>The trailing <code class="language-plaintext highlighter-rouge">return 0</code> isn’t decorative either. <code class="language-plaintext highlighter-rouge">[[ ... ]] &amp;&amp; export -f ...</code> is the last command of the function, so under zsh - where the test is false by design - <code class="language-plaintext highlighter-rouge">__declare_fn</code> would otherwise return 1 on every single call, which is a nasty thing to leave lying around for anyone who later chains it with <code class="language-plaintext highlighter-rouge">&amp;&amp;</code> or runs the script under <code class="language-plaintext highlighter-rouge">set -e</code>.</p>
 
 <p>The <code class="language-plaintext highlighter-rouge">__getSubPath</code> function is to detect if you are in a subdirectory of the <code class="language-plaintext highlighter-rouge">APP_PROJECT_PATH</code>. If so we use the relative subdirectory, empty otherwise.</p>
 
 <p>The <code class="language-plaintext highlighter-rouge">__docker_exec</code> function is to facilitate the use of the previous function and the working directory (here I assume <code class="language-plaintext highlighter-rouge">/var/www/html</code>). It also checks whether both its standard input and standard output are attached to a real terminal to pick <code class="language-plaintext highlighter-rouge">-i</code> or <code class="language-plaintext highlighter-rouge">-it</code> - so the same alias works both from your shell and from non-interactive contexts like a script or CI (checking just standard input wouldn’t be enough - see <a href="#container-autocomplete">Bonus: container autocomplete</a> for why).</p>
 
-<p>Finally we declare the aliases we want, through a small factory instead of repeating the same four lines for every tool. First we make sure that nothing prevents us from declaring the function by running <code class="language-plaintext highlighter-rouge">unalias</code>. Then <code class="language-plaintext highlighter-rouge">__define_docker_alias</code> declares a function which is what you would type (almost) if you were not using any wrapper of some sort, and accepts an infinite number of parameters thanks to <code class="language-plaintext highlighter-rouge">"$@"</code>. Finally we make it globally available with <code class="language-plaintext highlighter-rouge">__export_fn</code>.</p>
+<p>Finally we declare the aliases we want, through a small factory instead of repeating the same four lines for every tool. First we make sure that nothing prevents us from declaring the function by running <code class="language-plaintext highlighter-rouge">unalias</code>. Then <code class="language-plaintext highlighter-rouge">__define_docker_alias</code> declares a function which is what you would type (almost) if you were not using any wrapper of some sort, and accepts an infinite number of parameters thanks to <code class="language-plaintext highlighter-rouge">"$@"</code>. Finally we make it globally available with <code class="language-plaintext highlighter-rouge">__declare_fn</code>.</p>
 
 <p><code class="language-plaintext highlighter-rouge">cmd</code> is meant to stay a single word - the factory doesn’t do any word-splitting of its own, it just substitutes <code class="language-plaintext highlighter-rouge">${cmd}</code> once into the generated function body, so a value containing spaces would be passed to <code class="language-plaintext highlighter-rouge">docker exec</code> as one literal (and wrong) argument. Need <code class="language-plaintext highlighter-rouge">yarn</code> or any other single-binary tool you run through docker compose? Add one line:</p>
 
@@ -284,7 +308,7 @@ __export_fn unsource<span class="p">;</span>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">unalias </span>phpunit 2&gt;/dev/null <span class="o">&gt;</span>/dev/null <span class="o">||</span> <span class="nb">true</span><span class="p">;</span>
 phpunit<span class="o">()</span> <span class="o">{</span> php <span class="nt">-dmemory_limit</span><span class="o">=</span><span class="nt">-1</span> ./vendor/bin/phpunit <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
-__export_fn phpunit<span class="p">;</span>
+__declare_fn phpunit<span class="p">;</span>
 </code></pre></div></div>
 
 <h2 id="how-to-use-it">How to use it?</h2>
@@ -322,15 +346,70 @@ __export_fn phpunit<span class="p">;</span>
 
 <h3 id="getting-your-shell-back">Getting your shell back</h3>
 
-<p>Sourcing a file is a one-way operation: there’s no built-in “unsource”. Undoing it by hand would mean <code class="language-plaintext highlighter-rouge">unset -f</code> on every function declared above (plus the variables, plus the completions registered by <code class="language-plaintext highlighter-rouge">__load_completion</code>) - tedious, and easy to get out of sync the day you add a new alias. <code class="language-plaintext highlighter-rouge">unsource</code> sidesteps the whole bookkeeping problem:</p>
+<p>Sourcing a file is a one-way operation: there’s no built-in “unsource”. So the script ships one:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@server:~/myapp
 <span class="nv">$ </span>unsource<span class="p">;</span>
 </code></pre></div></div>
 
-<p><code class="language-plaintext highlighter-rouge">exec "${_FUNCTIONS_CURRENT_BASH}"</code> replaces the current shell process with a brand new one of the same kind - <code class="language-plaintext highlighter-rouge">bash</code> or <code class="language-plaintext highlighter-rouge">zsh</code>, whichever was detected at the top of the script. Nothing to enumerate, nothing to keep in sync: the process that held all those definitions is simply gone, and <code class="language-plaintext highlighter-rouge">php --version</code> talks to your host again.</p>
+<h4 id="the-tempting-one-liner-and-why-its-wrong">The tempting one-liner, and why it’s wrong</h4>
 
-<p>The trade-off is that it’s a blunt instrument, and worth knowing before you reach for it. Since it’s a fresh process, everything else session-local goes with the functions: shell variables you exported by hand, <code class="language-plaintext highlighter-rouge">cd</code> history, background jobs. Your working directory survives (the new shell inherits it), and so does anything set by your rc files, since the replacement shell reads them again on startup - which also means <code class="language-plaintext highlighter-rouge">unsource</code> is <em>not</em> the right tool if you sourced <code class="language-plaintext highlighter-rouge">functions.sh</code> from your <code class="language-plaintext highlighter-rouge">.bashrc</code>/<code class="language-plaintext highlighter-rouge">.zshrc</code>, as the new shell would immediately source it back.</p>
+<p>The obvious implementation is a single line - replace the shell with a brand new one of the same kind and let the old process take every definition with it:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>unsource<span class="o">()</span> <span class="o">{</span> <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_BASH</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span> <span class="o">}</span>
+</code></pre></div></div>
+
+<p>Nothing to enumerate, nothing to keep in sync. That’s what I ran for a long time, and it has two problems - one blunt, one genuinely sneaky.</p>
+
+<p>The sneaky one: <strong>it does nothing at all under bash</strong>. <code class="language-plaintext highlighter-rouge">export -f</code> doesn’t mark a function for a fresh start - it serialises it into the <em>environment</em>, as a variable named <code class="language-plaintext highlighter-rouge">BASH_FUNC_php%%</code>. And <code class="language-plaintext highlighter-rouge">exec</code> preserves the environment. So the new bash dutifully re-imports every single one of them on startup:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">source</span> ./functions.sh
+<span class="nv">$ </span><span class="nb">env</span> | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s1">'BASH_FUNC_[a-z_]*'</span>
+BASH_FUNC_php BASH_FUNC_composer BASH_FUNC_unsource
+<span class="nv">$ </span>unsource        <span class="c"># exec bash</span>
+<span class="nv">$ </span><span class="nb">type</span> <span class="nt">-t</span> php
+<span class="k">function</span>          <span class="c"># ... still here</span>
+</code></pre></div></div>
+
+<p>The reason this bug can go unnoticed for years is that it’s invisible in zsh: <code class="language-plaintext highlighter-rouge">__declare_fn</code> skips <code class="language-plaintext highlighter-rouge">export -f</code> there, so nothing survives the <code class="language-plaintext highlighter-rouge">exec</code> and everything <em>looks</em> fine. The shell where the export actually happens is the one where the teardown silently doesn’t.</p>
+
+<p>The blunt problem applies even where the <code class="language-plaintext highlighter-rouge">exec</code> does work. It’s a fresh process, so everything else session-local goes with the functions: shell variables you set by hand, <code class="language-plaintext highlighter-rouge">cd</code> history, background jobs. And since the replacement shell re-reads your rc files, sourcing <code class="language-plaintext highlighter-rouge">functions.sh</code> from <code class="language-plaintext highlighter-rouge">.bashrc</code>/<code class="language-plaintext highlighter-rouge">.zshrc</code> makes <code class="language-plaintext highlighter-rouge">unsource</code> a no-op - the new shell immediately sources it back.</p>
+
+<h4 id="actually-undoing-it">Actually undoing it</h4>
+
+<p>The usual objection to a real teardown is bookkeeping: <code class="language-plaintext highlighter-rouge">unset -f</code> on every function, and a list to keep in sync the day you add an alias. That objection doesn’t hold here, because <code class="language-plaintext highlighter-rouge">__declare_fn</code> is already the mandatory choke point every declaration goes through. Making it record the name costs one line, and the list can never drift.</p>
+
+<p>From there <code class="language-plaintext highlighter-rouge">unsource</code> walks the registry:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>name <span class="k">in</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_DECLARED</span><span class="p">[@]</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span> <span class="k">do</span>
+    ...
+    <span class="nb">unset</span> <span class="nt">-f</span> <span class="s2">"</span><span class="k">${</span><span class="nv">name</span><span class="k">}</span><span class="s2">"</span> 2&gt;/dev/null<span class="p">;</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">unset -f</code> removes the function <em>and</em> its export, which is exactly what the <code class="language-plaintext highlighter-rouge">exec</code> failed to do. The completion deregistration in the same loop (<code class="language-plaintext highlighter-rouge">complete -r</code> in bash, <code class="language-plaintext highlighter-rouge">compdef -d</code> in zsh) handles something the <code class="language-plaintext highlighter-rouge">exec</code> masked entirely: completions are registered against the literal word <code class="language-plaintext highlighter-rouge">composer</code>, and they outlive the function. Left behind, they’d keep firing against whatever <code class="language-plaintext highlighter-rouge">composer</code> now resolves to on your host.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">.env</code> variables are read back from the file itself rather than hardcoded, so that list can’t drift either:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">_FUNCTIONS_ENV_VARS</span><span class="o">=(</span><span class="si">$(</span><span class="nb">grep</span> <span class="nt">-oE</span> <span class="s1">'^[A-Za-z_][A-Za-z0-9_]*'</span> <span class="s2">"</span><span class="k">${</span><span class="nv">_FUNCTIONS_CURRENT_DIR</span><span class="k">}</span><span class="s2">/.env"</span><span class="si">)</span><span class="o">)</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>An array, not a space-separated string: zsh doesn’t word-split unquoted parameter expansions, so <code class="language-plaintext highlighter-rouge">unset ${string}</code> there fails with <code class="language-plaintext highlighter-rouge">invalid parameter name</code>. Arrays behave identically in both shells.</p>
+
+<p>Two details in the final <code class="language-plaintext highlighter-rouge">unset -f</code> line. It lists only <code class="language-plaintext highlighter-rouge">__getSubPath</code>, <code class="language-plaintext highlighter-rouge">__define_docker_alias</code> and <code class="language-plaintext highlighter-rouge">__declare_fn</code> - the three functions that <em>don’t</em> go through <code class="language-plaintext highlighter-rouge">__declare_fn</code>, and so aren’t in the registry. Adding the others would make zsh complain <code class="language-plaintext highlighter-rouge">no such hash table element</code> about names the loop already removed. And <code class="language-plaintext highlighter-rouge">unsource</code> is deliberately absent from that line too: it registers itself with <code class="language-plaintext highlighter-rouge">__declare_fn unsource</code>, so it’s removed by its own loop, mid-execution. Both shells finish executing a function body whose definition has just been deleted, so this is safe - the parsed body stays alive until it returns.</p>
+
+<h4 id="keeping-the-big-hammer-as-a-flag">Keeping the big hammer, as a flag</h4>
+
+<p>The <code class="language-plaintext highlighter-rouge">exec</code> still has one legitimate use: the day your session is genuinely wedged and you want a guaranteed-clean slate. So it stays, as <code class="language-plaintext highlighter-rouge">unsource --hard</code> - and crucially it <em>composes</em> with the teardown instead of replacing it. The unset pass runs first, which strips the <code class="language-plaintext highlighter-rouge">BASH_FUNC_*</code> entries from the environment, and only then does the <code class="language-plaintext highlighter-rouge">exec</code> happen, on an environment that’s already clean:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[[</span> <span class="nt">-n</span> <span class="s2">"</span><span class="k">${</span><span class="nv">hard</span><span class="k">}</span><span class="s2">"</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> <span class="nb">exec</span> <span class="s2">"</span><span class="k">${</span><span class="nv">shell</span><span class="k">}</span><span class="s2">"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>That’s also why the shell name is copied into a <code class="language-plaintext highlighter-rouge">local shell</code> at the top of the function: <code class="language-plaintext highlighter-rouge">_FUNCTIONS_CURRENT_BASH</code> has been unset by the time we get here.</p>
+
+<p>A flag rather than a second command, for two reasons. <code class="language-plaintext highlighter-rouge">unsource</code> earns its keep by being the literal antonym of <code class="language-plaintext highlighter-rouge">source</code> - the one command you typed to get into this state - and a script whose whole premise is squatting common words (<code class="language-plaintext highlighter-rouge">php</code>, <code class="language-plaintext highlighter-rouge">composer</code>, <code class="language-plaintext highlighter-rouge">console</code>, <code class="language-plaintext highlighter-rouge">dev</code>, <code class="language-plaintext highlighter-rouge">prod</code>) should spend its collision budget carefully. <code class="language-plaintext highlighter-rouge">reset</code>, the tempting name for the hard variant, is a particularly bad trade: it’s a real binary (<code class="language-plaintext highlighter-rouge">/usr/bin/reset</code>, the ncurses terminal reset). You want it available precisely when a container command has just vomited binary into your terminal - which is to say, while <code class="language-plaintext highlighter-rouge">functions.sh</code> is sourced.</p>
+
+<p>There’s no <code class="language-plaintext highlighter-rouge">reload</code> either, and none is needed: re-sourcing is already idempotent. <code class="language-plaintext highlighter-rouge">_FUNCTIONS_DECLARED</code> is reset at the top of the file and every declaration starts with its own <code class="language-plaintext highlighter-rouge">unalias</code>, so after editing the script, <code class="language-plaintext highlighter-rouge">source ./functions.sh</code> again and you’re done - no duplicated registry entries.</p>
 
 <h2 id="container-autocomplete">Bonus: container autocomplete</h2>
 
@@ -370,9 +449,11 @@ __export_fn phpunit<span class="p">;</span>
 
 <p>For a long time, I had to manually <code class="language-plaintext highlighter-rouge">source</code> / <code class="language-plaintext highlighter-rouge">unsource</code> this script every time I opened a new terminal window.</p>
 
+<p>Writing a real teardown is what made the missing piece obvious. The registry-and-<code class="language-plaintext highlighter-rouge">unset</code> dance isn’t only about being able to type <code class="language-plaintext highlighter-rouge">unsource</code> yourself - it’s precisely what a directory-aware tool has to run on your behalf when you leave the project. The <code class="language-plaintext highlighter-rouge">exec</code> version could never have been that: you can’t restart someone’s shell because they <code class="language-plaintext highlighter-rouge">cd ..</code>-ed out of a directory, and you certainly can’t do it twice a minute. Once undoing a <code class="language-plaintext highlighter-rouge">source</code> is a plain function call that leaves the rest of the session untouched, hooking it to directory changes stops being a hack and becomes just… a function call.</p>
+
 <p>I tried <a href="https://github.com/alecthomas/ondir">ondir</a>, but it’s considered feature complete and hasn’t received any updates in several years.</p>
 
-<p>I’m now building a dedicated tool for that, which will get its own write-up: <a href="https://neirda24.github.io/envoke/">envoke</a> <em>(work in progress)</em>.</p>
+<p>I’m now building a dedicated tool for that, which will get its own write-up: <a href="https://neirda24.github.io/envoke/">envoke</a> <em>(feedback welcome)</em>.</p>
 
   </div>
 </article>
